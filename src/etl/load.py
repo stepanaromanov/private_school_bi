@@ -1,3 +1,5 @@
+
+# load script
 from src.utils.utils_dataframe import *
 from src.utils.utils_general import *
 import pandas as pd
@@ -11,7 +13,7 @@ logger = logging.getLogger("omonschool_etl")
 
 def load_to_postgres(
         df: pd.DataFrame,
-        table_base_name: str,source .venv/bin/activate
+        table_base_name: str,
         postfix: str,
         primary_key: str = 'id',
         truncate: bool = False,
