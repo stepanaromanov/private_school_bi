@@ -1,0 +1,567 @@
+from src.utils.utils_dataframe import *
+from src.utils.utils_general import *
+import ast
+import requests
+import pandas as pd
+import logging
+logger = logging.getLogger("omonschool_etl")
+
+
+
+def eduschool_fetch_attendance_and_marks(token , classes_df, quarters_df, journals_df):
+    class_ids = classes_df["id"].tolist()
+    journal_ids = journals_df["id"].tolist()
+    quarter_ids = quarters_df["id"].tolist()
+
+    # Headers from the example
+    headers = {
+        'accept': 'application/json, text/plain, */*',
+        'accept-encoding': 'gzip, deflate, br, zstd',
+        'accept-language': 'en-US,en;q=0.9',
+        'authorization': f'Bearer {token}',
+        'branch': '68417f7edbbdfc73ada6ef01',
+        'connection': 'keep-alive',
+        'host': 'backend.eduschool.uz',
+        'language': 'en',
+        'organization': 'test',
+        'origin': 'https://omonschool.eduschool.uz',
+        'referer': 'https://omonschool.eduschool.uz/',
+        'sec-ch-ua': '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"macOS"',
+        'sec-fetch-dest': 'empty',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-site': 'same-site',
+        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+        'academicyearid': '6841869b8eb7901bc71c7807'
+    }
+
+    # Function to fetch attendance for a class_id, subject_id (journal_id), quarter_id
+    def fetch_attendance(quarter_id, class_id, subject_id):
+        base_url = 'https://backend.eduschool.uz/moderator-api/attendances/class'
+        params_local = {
+            'quarterId': quarter_id,
+            'classId': class_id,
+            'subjectId': subject_id,
+            'childId': subject_id
+        }
+        response = requests.get(base_url, params=params_local, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+
+        if data['code'] != 0:
+            raise ValueError(
+                f"API error for class {class_id}, subject {subject_id}, quarter {quarter_id}: {data['message']}")
+
+        return data['data']['data'], [att for block in data['data']['data'] for att in block.get('attendances', [])]
+
+    # Loop over combinations (assuming journal_ids and quarter_ids are zipped or cycled if lengths differ; here, loop over all combinations if needed, but preview suggests per-class/subject/quarter)
+    all_attendance_context = []
+    all_attendances = []
+    for quarter_id in quarter_ids:
+        for class_id in class_ids:
+            for subject_id in journal_ids:
+                try:
+                    attendance_context, attendances = fetch_attendance(quarter_id, class_id, subject_id)
+                    # Add identifiers to entries
+                    for att in attendance_context:
+                        att['class_id'] = class_id
+                        att['subject_id'] = subject_id
+                        att['quarter_id'] = quarter_id
+                    all_attendance_context.extend(attendance_context)
+                    all_attendances.extend(attendances)
+                except Exception as e:
+                    print(f"Error for class {class_id}, subject {subject_id}, quarter {quarter_id}: {e}")
+
+
+    # Create DataFrames
+    df_attendance_context = pd.DataFrame(all_attendance_context)
+    df_attendances = pd.DataFrame(all_attendances)
+    df_attendance_context.drop('attendances', axis=1, inplace=True)
+
+    # Flatten 'data' (attendances)
+    if 'period' in df_attendance_context.columns:
+        period_df = pd.json_normalize(df_attendance_context['period'], sep='__')
+        df_attendance_context = pd.concat(
+            [df_attendance_context.drop('period', axis=1), period_df.add_prefix('period__')], axis=1)
+
+    if 'markHistory' in df_attendances.columns:
+        period_df = pd.json_normalize(df_attendances['markHistory'], sep='__')
+        df_attendances = pd.concat([df_attendances.drop('markHistory', axis=1), period_df.add_prefix('markHistory__')],
+                                   axis=1)
+
+    def flatten_mark_history(cell):
+        if pd.isna(cell) or cell == '{}':
+            return None
+        try:
+            d = ast.literal_eval(cell) if isinstance(cell, str) else cell
+            date_short = d.get('date', '')[:10]  # keep only YYYY-MM-DD
+            return f"{d.get('markSetByEmployeeId')}:{date_short}:{d.get('oldMark')}:{d.get('newMark')}:{d.get('newComment')}"
+        except Exception:
+            return None
+
+    # apply to all columns matching pattern
+    cols = [c for c in df_attendances.columns if c.startswith('markHistory_')]
+    df_attendances[cols] = df_attendances[cols].map(flatten_mark_history)
+
+    df_attendance_context.fillna(0, inplace=True)
+    df_attendance_context = clean_string_columns(df_attendance_context)
+    df_attendance_context = add_timestamp(df_attendance_context)
+    df_attendance_context = normalize_columns(df_attendance_context)
+
+    df_attendances.fillna(0, inplace=True)
+    df_attendances = clean_string_columns(df_attendances)
+    df_attendances = add_timestamp(df_attendances)
+    df_attendances = normalize_columns(df_attendances)
+
+    # Save dfs to CSV
+    save_df_with_timestamp(df=df_attendance_context, df_name="attendance_context")
+    save_df_with_timestamp(df=df_attendances, df_name="attendances")
+
+    return df_attendance_context, df_attendances
+
+
+def eduschool_fetch_classes(token):
+    # API endpoint and base params
+    base_url = 'https://backend.eduschool.uz/moderator-api/class/pagin'
+    params = {
+        'limit': 20,  # As per the example; can adjust if needed
+        'headTeachersIds': '[]',
+        'search': ''
+    }
+    headers = {
+        'accept': 'application/json, text/plain, */*',
+        'accept-encoding': 'gzip, deflate, br, zstd',
+        'accept-language': 'en-US,en;q=0.9',
+        'authorization': f'Bearer {token}',
+        'branch': '68417f7edbbdfc73ada6ef01',
+        'connection': 'keep-alive',
+        'host': 'backend.eduschool.uz',
+        'language': 'en',
+        'organization': 'test',
+        'origin': 'https://omonschool.eduschool.uz',
+        'referer': 'https://omonschool.eduschool.uz/',
+        'sec-ch-ua': '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"macOS"',
+        'sec-fetch-dest': 'empty',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-site': 'same-site',
+        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+        'academicyearid': '6841869b8eb7901bc71c7807'
+    }
+
+    # Function to fetch all pages with pagination
+    def fetch_all_classes():
+        all_classes = []
+        page = 1
+        total = None
+
+        while True:
+            params['page'] = page
+            response = requests.get(base_url, params=params, headers=headers)
+            response.raise_for_status()  # Raise error if not 200
+            data = response.json()
+
+            if data['code'] != 0:
+                raise ValueError(f"API error: {data['message']}")
+
+            classes = data['data']['data']
+            all_classes.extend(classes)
+
+            if total is None:
+                total = data['data']['total']
+
+            if len(all_classes) >= total:
+                break
+
+            page += 1
+
+        return all_classes
+
+    # Fetch data
+    classes_data = fetch_all_classes()
+
+    # Create initial DataFrame
+    df = pd.DataFrame(classes_data)
+
+    # Delete moderators entirely (drop column if exists, no flattening)
+    if 'moderators' in df.columns:
+        df.drop('moderators', axis=1, inplace=True)
+
+    # Flatten building (dict with potential nested list like turnstiles)
+    if 'building' in df.columns:
+        building_df = pd.json_normalize(df['building'], sep='_')
+        df = pd.concat([df.drop('building', axis=1), building_df.add_prefix('building_')], axis=1)
+
+    if 'headTeacher' in df.columns:
+        # Extract first headTeacher dict safely
+        df['headTeacher'] = df['headTeacher'].apply(
+            lambda x: x[0] if isinstance(x, list) and len(x) > 0 else None
+        )
+
+        # Flatten into separate columns
+        headTeacher_df = pd.json_normalize(df['headTeacher'], sep='_')
+
+        # Merge back
+        df = pd.concat(
+            [df.drop('headTeacher', axis=1), headTeacher_df.add_prefix('headTeacher_')],
+            axis=1
+        )
+    df = clean_string_columns(df)
+    df = add_timestamp(df)
+    df = normalize_columns(df)
+
+    df[['uuid', 'grade']] = df[['uuid', 'grade']].apply(lambda s: fill_and_numeric(s, dtype="int"))
+    df[['students_count', 'max_students_count']] = df[['students_count', 'max_students_count']].apply(
+        lambda s: fill_and_numeric(s, dtype="int"))
+    df = df.rename(columns={"letter": "section", "language": "instruction_language"})
+
+    logger.info("Eduschool. Classes have been fetched.")
+
+    save_df_with_timestamp(df, df_name="classes_urgench")
+
+    return df
+
+
+def eduschool_fetch_employees(token):
+    # API endpoint and base params
+    base_url = 'https://backend.eduschool.uz/moderator-api/employees/pagin'
+    params = {
+        'limit': 200,  # As per the example; can adjust if needed
+    }
+    headers = {
+        'accept': 'application/json, text/plain, */*',
+        'accept-encoding': 'identity',
+        'accept-language': 'en-US,en;q=0.9',
+        'authorization': f'Bearer {token}',
+        'branch': '68417f7edbbdfc73ada6ef01',
+        'connection': 'keep-alive',
+        'host': 'backend.eduschool.uz',
+        'language': 'en',
+        'organization': 'test',
+        'origin': 'https://omonschool.eduschool.uz',
+        'referer': 'https://omonschool.eduschool.uz/',
+        'sec-ch-ua': '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"macOS"',
+        'sec-fetch-dest': 'empty',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-site': 'same-site',
+        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+        'academicyearid': '6841869b8eb7901bc71c7807'
+    }
+
+    # Function to fetch all pages with pagination
+    def fetch_all_employees():
+        response = requests.get(base_url, params=params, headers=headers)
+        response.raise_for_status()  # Raise error if not 200
+        data = response.json()
+
+        # Check success instead of code, per preview format
+        if not data.get('success', False):
+            raise ValueError(f"API error: {data.get('message', 'Unknown error')}")
+
+        # Access data per preview: data['data']['data'] for employees, data['data']['total'] for total
+        employees = data['data']['data'] if 'data' in data['data'] else data['data']  # Handle potential wrapper
+
+        return employees
+
+    # Fetch data
+    employees_data = fetch_all_employees()
+
+    # Create initial DataFrame
+    df = pd.DataFrame(employees_data)
+
+    # Flatten branchEmployee (dict)
+    if 'branchEmployee' in df.columns:
+        branch_df = pd.json_normalize(df['branchEmployee'], sep='__')
+        df = pd.concat([df.drop('branchEmployee', axis=1), branch_df.add_prefix('branchEmployee__')], axis=1)
+
+    # Flatten employeeSubjects (list)
+    if 'employeeSubjects' in df.columns:
+        max_subjects = df['employeeSubjects'].str.len().max() if not df['employeeSubjects'].isnull().all() else 0
+        for i in range(max_subjects):
+            df[f'employeeSubjects__{i}'] = df['employeeSubjects'].str[i]
+        df.drop('employeeSubjects', axis=1, inplace=True)
+
+    # Flatten subjects (list)
+    if 'subjects' in df.columns:
+        max_subjects = df['subjects'].str.len().max() if not df['subjects'].isnull().all() else 0
+        for i in range(max_subjects):
+            df[f'subjects__{i}'] = df['subjects'].str[i]
+        df.drop('subjects', axis=1, inplace=True)
+
+    # Flatten customFields if present (list)
+    if 'customFields' in df.columns:
+        df.drop('customFields', axis=1, inplace=True)  # Drop if empty/irrelevant
+
+    # Clean and enrich dfs
+    df.fillna(0, inplace=True)
+    df = clean_string_columns(df)
+    df = add_timestamp(df)
+    df = normalize_columns(df)
+
+    # Save df to CSV
+    save_df_with_timestamp(df=df, df_name="employees_data")
+
+    return df
+
+
+def eduschool_fetch_journals(token , classes_df):
+    class_ids = classes_df["id"].tolist()
+
+    # Headers from the example
+    headers = {
+        'accept': 'application/json, text/plain, */*',
+        'accept-encoding': 'gzip, deflate, br, zstd',
+        'accept-language': 'en-US,en;q=0.9',
+        'authorization': f'Bearer {token}',
+        'branch': '68417f7edbbdfc73ada6ef01',
+        'connection': 'keep-alive',
+        'host': 'backend.eduschool.uz',
+        'language': 'en',
+        'organization': 'test',
+        'origin': 'https://omonschool.eduschool.uz',
+        'referer': 'https://omonschool.eduschool.uz/',
+        'sec-ch-ua': '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"macOS"',
+        'sec-fetch-dest': 'empty',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-site': 'same-site',
+        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+        'academicyearid': '6841869b8eb7901bc71c7807'
+    }
+
+    # Function to fetch journal for a single class ID (no pagination, single request)
+    def fetch_journal_for_class(class_id):
+        base_url = f'https://backend.eduschool.uz/moderator-api/journal/{class_id}'
+        params_local = {
+            'search': '',
+            'limit': 20,
+            'page': 1
+        }
+        response = requests.get(base_url, params=params_local, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+
+        if data['code'] != 0:
+            raise ValueError(f"API error for class {class_id}: {data['message']}")
+
+        journals = data['data']
+
+        # Add class_id to each journal entry
+        for journal in journals:
+            journal['class_id'] = class_id
+
+        return journals
+
+    # Loop over class IDs, fetch journals, and collect data
+    all_data = []
+    for class_id in class_ids:
+        try:
+            journals = fetch_journal_for_class(class_id)
+            all_data.extend(journals)
+        except Exception as e:
+            print(f"Error for class {class_id}: {e}")
+
+    # Create DataFrame
+    df = pd.DataFrame(all_data)
+
+    # Extract and flatten only specified columns
+    extracted_data = []
+
+    for _, row in df.iterrows():
+        entry = {
+            'class_id': row.get('classId'),
+            'subject_id': row['subject']['_id'] if 'subject' in row else None,
+            'subject_name': row['subject']['name'] if 'subject' in row else None,
+            'journal_id': row.get('_id')
+        }
+
+        # Flatten teacher IDs (indexed)
+        if 'teacher' in row:
+            max_teacher = len(row['teacher'])
+            for i in range(max_teacher):
+                entry[f'teacher_{i}_id'] = row['teacher'][i]['_id'] if i < len(row['teacher']) else None
+
+        extracted_data.append(entry)
+
+    # Create final DataFrame with only specified columns
+    df_final = pd.DataFrame(extracted_data)
+
+    df_final.fillna(0, inplace=True)
+    df_final = clean_string_columns(df_final)
+    df_final = add_timestamp(df_final)
+    df_final = normalize_columns(df_final)
+
+    return df_final
+
+
+def eduschool_fetch_quarters(token):
+    # API endpoint and base params
+    base_url = 'https://backend.eduschool.uz/moderator-api/quarter'
+    params = {
+        'search': '',
+        'limit': 200,  # As per the example; sufficient for small totals
+    }
+    headers = {
+        'accept': 'application/json, text/plain, */*',
+        'accept-encoding': 'gzip, deflate, br, zstd',
+        'accept-language': 'en-US,en;q=0.9',
+        'authorization': f'Bearer {token}',
+        'branch': '68417f7edbbdfc73ada6ef01',
+        'connection': 'keep-alive',
+        'host': 'backend.eduschool.uz',
+        'language': 'en',
+        'organization': 'test',
+        'origin': 'https://omonschool.eduschool.uz',
+        'referer': 'https://omonschool.eduschool.uz/',
+        'sec-ch-ua': '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"macOS"',
+        'sec-fetch-dest': 'empty',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-site': 'same-site',
+        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+        'academicyearid': '6841869b8eb7901bc71c7807'
+    }
+
+    # fetch all quarters
+    params['page'] = 1
+    response = requests.get(base_url, params=params, headers=headers)
+    response.raise_for_status()  # Raise error if not 200
+    data = response.json()
+
+    if data['code'] != 0:
+        raise ValueError(f"API error: {data['message']}")
+
+    quarters = data['data']
+
+    df = pd.DataFrame(quarters)
+
+    df.fillna(0, inplace=True)
+    df = clean_string_columns(df)
+    df = add_timestamp(df)
+    df = normalize_columns(df)
+
+    # Save dfs to CSV
+    save_df_with_timestamp(df=df, df_name="quarters_data")
+
+    return df
+
+
+def eduschool_fetch_students(token):
+    # API endpoint and base params (no filters for full list)
+    base_url = 'https://backend.eduschool.uz/moderator-api/students/pagin'
+    params = {
+        'limit': 20,  # As per the example; can adjust for efficiency (e.g., 200)
+        'grade': '[]',
+        'search': ''
+    }
+    headers = {
+        'accept': 'application/json, text/plain, */*',
+        'accept-encoding': 'gzip, deflate, br, zstd',
+        'accept-language': 'en-US,en;q=0.9',
+        'authorization': f'Bearer {token}',
+        'branch': '68417f7edbbdfc73ada6ef01',
+        'connection': 'keep-alive',
+        'host': 'backend.eduschool.uz',
+        'language': 'en',
+        'organization': 'test',
+        'origin': 'https://omonschool.eduschool.uz',
+        'referer': 'https://omonschool.eduschool.uz/',
+        'sec-ch-ua': '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"macOS"',
+        'sec-fetch-dest': 'empty',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-site': 'same-site',
+        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+        'academicyearid': '6841869b8eb7901bc71c7807'
+    }
+
+    all_students = []
+    aggregates = {}  # To store totalBalance, totalDebted, totalOwned (from first response)
+    page = 1
+    total = None
+
+    while True:
+        params['page'] = page
+        response = requests.get(base_url, params=params, headers=headers)
+        response.raise_for_status()  # Raise error if not 200
+        data = response.json()
+
+        if data['code'] != 0:
+            raise ValueError(f"API error: {data['message']}")
+
+        students = data['data']['data']
+        all_students.extend(students)
+
+        if total is None:
+            total = data['data']['total']
+            aggregates = {
+                'totalBalance': data['data'].get('totalBalance', 0),
+                'totalDebted': data['data'].get('totalDebted', 0),
+                'totalOwned': data['data'].get('totalOwned', 0)
+            }
+
+        if len(all_students) >= total:
+            break
+
+        page += 1
+
+    # Create initial DataFrame for students
+    df = pd.DataFrame(all_students)
+
+    # Flatten class (dict) - keep only '_id'
+    if 'class' in df.columns:
+        class_df = pd.json_normalize(df['class'], sep='__')[['_id']]
+        df = pd.concat([df.drop('class', axis=1), class_df.add_prefix('class__')], axis=1)
+
+    # Flatten parents (list of dicts) - for each, keep only '_id' and 'type'
+    if 'parents' in df.columns:
+        max_parents = df['parents'].str.len().max() if not df['parents'].isnull().all() else 0
+        for i in range(max_parents):
+            parent_col = pd.json_normalize(df['parents'].str[i], sep='__')[['_id', 'type']]
+            df = pd.concat([df, parent_col.add_prefix(f'parents__{i}__')], axis=1)
+        df.drop('parents', axis=1, inplace=True)
+
+    # Flatten status (dict) - keep only '_id', 'name', 'state', 'isDefault'
+    if 'status' in df.columns:
+        status_df = pd.json_normalize(df['status'], sep='__')[['_id', 'name', 'state', 'isDefault']]
+        df = pd.concat([df.drop('status', axis=1), status_df.add_prefix('status__')], axis=1)
+
+    # Flatten subscription (dict) - keep all subfields
+    if 'subscription' in df.columns:
+        sub_df = pd.json_normalize(df['subscription'], sep='__')
+        df = pd.concat([df.drop('subscription', axis=1), sub_df.add_prefix('subscription__')], axis=1)
+
+    # Flatten customFields and otherPhoneNumbers if present (lists, often empty)
+    if 'customFields' in df.columns:
+        df.drop('customFields', axis=1, inplace=True)  # Drop if empty/irrelevant
+    if 'otherPhoneNumbers' in df.columns:
+        max_phones = df['otherPhoneNumbers'].str.len().max() if not df['otherPhoneNumbers'].isnull().all() else 0
+        for i in range(max_phones):
+            df[f'otherPhoneNumbers__{i}'] = df['otherPhoneNumbers'].str[i]
+        df.drop('otherPhoneNumbers', axis=1, inplace=True)
+
+    # Create summary DataFrame for aggregates
+    agg_df = pd.DataFrame([aggregates])
+
+    # Clean and enrich dfs
+    df.fillna(0, inplace=True)
+    df = clean_string_columns(df)
+    df = add_timestamp(df)
+    df = normalize_columns(df)
+    agg_df = normalize_columns(agg_df)
+
+    # Save dfs to CSV
+    save_df_with_timestamp(df=df, df_name="students_data")
+    save_df_with_timestamp(df=agg_df, df_name="students_aggregated_data")
+
+    return df, agg_df
+
+
+

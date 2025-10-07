@@ -1,0 +1,27 @@
+# Virtual environments
+venv/
+.env/
+.venv/
+
+# IDE settings
+.idea/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# OS files
+.DS_Store
+
+# Project-specific folders
+credentials/
+tokens/
+logs/
+data_backup/
+
+# Optional: compiled bytecode, test cache, etc.
+*.pyo
+*.pyd
+*.pdb
+.pytest_cache/
+
