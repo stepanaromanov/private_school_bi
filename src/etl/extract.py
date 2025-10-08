@@ -15,8 +15,8 @@ def eduschool_fetch_attendance_and_marks(token, classes_df, quarters_df, journal
 
     # filtering active quarter
     # Convert to datetime
-    quarters_df["starts_at"] = pd.to_datetime(quarters_df["starts_at"], utc=True)
-    quarters_df["ends_at"] = pd.to_datetime(quarters_df["ends_at"], utc=True)
+    quarters_df["starts_at"] = pd.to_datetime(quarters_df["starts_at_timestamp"], utc=True)
+    quarters_df["ends_at"] = pd.to_datetime(quarters_df["ends_at_timestamp"], utc=True)
 
     # Get current UTC date
     now = datetime.datetime.now(datetime.timezone.utc)
@@ -136,16 +136,30 @@ def eduschool_fetch_attendance_and_marks(token, classes_df, quarters_df, journal
     df_attendances = pd.DataFrame(all_attendances)
     df_attendance_context.drop('attendances', axis=1, inplace=True)
 
-    # Flatten 'data' (attendances)
-    if 'period' in df_attendance_context.columns:
-        period_df = pd.json_normalize(df_attendance_context['period'], sep='__')
-        df_attendance_context = pd.concat(
-            [df_attendance_context.drop('period', axis=1), period_df.add_prefix('period__')], axis=1)
+    if 'class_id.1' in df_attendance_context.columns:
+        df_attendance_context.drop('class_id.1', axis=1, inplace=True)
 
+    # Flatten 'period' — always keep indices 0–8
+    if 'period' in df_attendance_context.columns:
+        for i in range(9):  # ✅ fixed indices 0–8
+            period_series = df_attendance_context['period'].apply(
+                lambda x: x[i] if isinstance(x, list) and i < len(x) else None
+            )
+            df_attendance_context[f'period__{i}'] = period_series
+
+        # Drop the original nested column
+        df_attendance_context.drop(columns='period', inplace=True)
+
+    # Flatten 'markHistory' — always keep indices 0–8
     if 'markHistory' in df_attendances.columns:
-        period_df = pd.json_normalize(df_attendances['markHistory'], sep='__')
-        df_attendances = pd.concat([df_attendances.drop('markHistory', axis=1), period_df.add_prefix('markHistory__')],
-                                   axis=1)
+        for i in range(9):  # ✅ fixed indices 0–8
+            mark_series = df_attendances['markHistory'].apply(
+                lambda x: x[i] if isinstance(x, list) and i < len(x) else None
+            )
+            df_attendances[f'markHistory__{i}'] = mark_series
+
+        # Drop the original nested column
+        df_attendances.drop(columns='markHistory', inplace=True)
 
     def flatten_mark_history(cell):
         if pd.isna(cell) or cell == '{}':
@@ -163,13 +177,13 @@ def eduschool_fetch_attendance_and_marks(token, classes_df, quarters_df, journal
 
     df_attendance_context.fillna(0, inplace=True)
     df_attendance_context = clean_string_columns(df_attendance_context)
-    df_attendance_context = add_timestamp(df_attendance_context)
     df_attendance_context = normalize_columns(df_attendance_context)
+    df_attendance_context = add_timestamp(df_attendance_context)
 
     df_attendances.fillna(0, inplace=True)
     df_attendances = clean_string_columns(df_attendances)
-    df_attendances = add_timestamp(df_attendances)
     df_attendances = normalize_columns(df_attendances)
+    df_attendances = add_timestamp(df_attendances)
 
     # Save dfs to CSV
     save_df_with_timestamp(df=df_attendance_context, df_name="attendance_context")
@@ -266,8 +280,8 @@ def eduschool_fetch_classes(token):
             axis=1
         )
     df = clean_string_columns(df)
-    df = add_timestamp(df)
     df = normalize_columns(df)
+    df = add_timestamp(df)
 
     df[['uuid', 'grade']] = df[['uuid', 'grade']].apply(lambda s: fill_and_numeric(s, dtype="int"))
     df[['students_count', 'max_students_count']] = df[['students_count', 'max_students_count']].apply(
@@ -356,8 +370,8 @@ def eduschool_fetch_employees(token):
     # Clean and enrich dfs
     df.fillna(0, inplace=True)
     df = clean_string_columns(df)
-    df = add_timestamp(df)
     df = normalize_columns(df)
+    df = add_timestamp(df)
 
     # Save df to CSV
     save_df_with_timestamp(df=df, df_name="employees_data")
@@ -437,12 +451,15 @@ def eduschool_fetch_journals(token , classes_df):
             'journal_id': row.get('_id')
         }
 
-        # Flatten teacher IDs (indexed)
-        if 'teacher' in row:
-            max_teacher = len(row['teacher'])
-            for i in range(max_teacher):
-                entry[f'teacher_{i}_id'] = row['teacher'][i]['_id'] if i < len(row['teacher']) else None
-
+        # Flatten teacher IDs (always create columns 0–5)
+        for i in range(6):  # ✅ fixed indices 0–5
+            col_name = f'teacher_{i}_id'
+            if 'teacher' in row and isinstance(row['teacher'], list) and i < len(row['teacher']):
+                teacher_item = row['teacher'][i]
+                entry[col_name] = teacher_item.get('_id') if isinstance(teacher_item, dict) else None
+            else:
+                entry[col_name] = None  # ensure column exists even if no data
+        # Append result
         extracted_data.append(entry)
 
     # Create final DataFrame with only specified columns
@@ -450,8 +467,8 @@ def eduschool_fetch_journals(token , classes_df):
 
     df_final.fillna(0, inplace=True)
     df_final = clean_string_columns(df_final)
-    df_final = add_timestamp(df_final)
     df_final = normalize_columns(df_final)
+    df_final = add_timestamp(df_final)
 
     # Save df to CSV
     save_df_with_timestamp(df=df_final, df_name="journals_data")
@@ -503,8 +520,8 @@ def eduschool_fetch_quarters(token):
 
     df.fillna(0, inplace=True)
     df = clean_string_columns(df)
-    df = add_timestamp(df)
     df = normalize_columns(df)
+    df = add_timestamp(df)
 
     # Save dfs to CSV
     save_df_with_timestamp(df=df, df_name="quarters_data")
@@ -580,13 +597,25 @@ def eduschool_fetch_students(token):
         class_df = pd.json_normalize(df['class'], sep='__')[['_id']]
         df = pd.concat([df.drop('class', axis=1), class_df.add_prefix('class__')], axis=1)
 
-    # Flatten parents (list of dicts) - for each, keep only '_id' and 'type'
+    # Flatten parents (list of dicts) — always create '_id' and 'type' columns for indices 0–5
     if 'parents' in df.columns:
-        max_parents = df['parents'].str.len().max() if not df['parents'].isnull().all() else 0
-        for i in range(max_parents):
-            parent_col = pd.json_normalize(df['parents'].str[i], sep='__')[['_id', 'type']]
-            df = pd.concat([df, parent_col.add_prefix(f'parents__{i}__')], axis=1)
-        df.drop('parents', axis=1, inplace=True)
+        for i in range(4):  # ✅ fixed indices 0–3
+            parent_series = df['parents'].apply(
+                lambda x: x[i] if isinstance(x, list) and i < len(x) else {}
+            )
+
+            parent_df = pd.json_normalize(parent_series, sep='__')
+
+            # Ensure both columns exist even if missing in data
+            for col in ['_id', 'type']:
+                if col not in parent_df.columns:
+                    parent_df[col] = None
+
+            parent_df = parent_df[['_id', 'type']].add_prefix(f'parents__{i}__')
+            df = pd.concat([df, parent_df], axis=1)
+
+        # Drop original nested column
+        df.drop(columns='parents', inplace=True)
 
     # Flatten status (dict) - keep only '_id', 'name', 'state', 'isDefault'
     if 'status' in df.columns:
@@ -613,9 +642,10 @@ def eduschool_fetch_students(token):
     # Clean and enrich dfs
     df.fillna(0, inplace=True)
     df = clean_string_columns(df)
-    df = add_timestamp(df)
     df = normalize_columns(df)
+    df = add_timestamp(df)
     agg_df = normalize_columns(agg_df)
+    agg_df = add_timestamp(agg_df)
     agg_df['id'] = 1
 
     # Save dfs to CSV

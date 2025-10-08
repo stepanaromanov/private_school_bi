@@ -10,45 +10,60 @@ import pandas as pd
 
 def add_timestamp(df: pd.DataFrame, col: str = "fetched_timestamp") -> pd.DataFrame:
     """
-    Add a current timestamp column in Asia/Tashkent timezone for ETL tracking.
-    Convert any existing date columns from ISO 8601 to Postgres TIMESTAMP format,
-    rename them to <original>_timestamp, and drop the original column.
+        Add a current timestamp column in Asia/Tashkent timezone for ETL tracking.
+        Convert any existing date columns from ISO 8601 to Postgres TIMESTAMP format,
+        rename them to <original>_timestamp, and drop the original column.
 
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input DataFrame.
-    col : str, optional
-        Column name to store the current timestamp. Default = 'fetched_timestamp'.
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Input DataFrame.
+        col : str, optional
+            Column name to store the current timestamp. Default = 'fetched_timestamp'.
 
-    Returns
-    -------
-    pd.DataFrame
-        DataFrame with:
-        - new column `col` containing current Tashkent timestamp
-        - date columns converted to Postgres format, renamed to `<original>_timestamp`
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with:
+            - new column `col` containing current Tashkent timestamp
+            - date columns converted to Postgres format, renamed to `<original>_timestamp`
     """
     tz = "Asia/Tashkent"
     df_out = df.copy()
 
-    # 1. Add current timestamp column
+    # 1. Add current timestamp column (Tashkent time)
     now_str = pd.Timestamp.now(tz=tz).strftime("%Y-%m-%d %H:%M:%S")
     df_out[col] = now_str
 
-    # 2. List of known date columns to convert
+    # 2. Known date columns to normalize
     date_cols = [
         'date', 'created_at', 'starts_at', 'ends_at',
         'updated_at', 'birthday', 'contract_date',
         'lesson_date', 'attendance_date'
     ]
 
-    # 3. Convert ISO 8601 strings, rename, and drop original
+    # 3. Convert date columns to Postgres TIMESTAMP format
     for dc in date_cols:
         if dc in df_out.columns:
             new_col = f"{dc}_timestamp"
-            df_out[new_col] = pd.to_datetime(df_out[dc], utc=True) \
-                .dt.tz_convert(tz) \
-                .dt.strftime("%Y-%m-%d %H:%M:%S")
+
+            # Try parsing as datetime
+            dt = pd.to_datetime(df_out[dc], errors='coerce')
+
+            # Fill invalid or missing with 1970-01-01 UTC
+            dt = dt.fillna(pd.Timestamp('1970-01-01T00:00:00.000Z'))
+
+            # If tz-naive, assume UTC before converting
+            if dt.dt.tz is None:
+                dt = dt.dt.tz_localize("UTC")
+
+            # Convert to Tashkent and format as string
+            df_out[new_col] = (
+                dt.dt.tz_convert(tz)
+                  .dt.strftime("%Y-%m-%d %H:%M:%S")
+            )
+
+            # Drop original column
             df_out.drop(columns=dc, inplace=True)
 
     return df_out

@@ -120,9 +120,6 @@ def load_to_postgres(
                         inserts, updates = future.result()
                         total_inserts += inserts
                         total_updates += updates
-                        logging.info(f"[{table_name}] Processed batch: {inserts} inserted, {updates} updated.")
-
-                logging.info(f"[{table_name}] Total: {total_inserts} rows inserted, {total_updates} rows updated.")
 
             except Exception as e:
                 logging.error(f"[{table_name}] Error during load: {e}")
