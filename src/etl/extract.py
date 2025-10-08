@@ -95,11 +95,13 @@ def eduschool_fetch_attendance_and_marks(token, classes_df, quarters_df, journal
     # Main loop: Initial fetches
     for quarter_id in quarter_ids:
         for class_id in class_ids:
+            if len(all_attendance_context) > 100: break
             relevant_journal_ids = class_to_journals.get(class_id, [])
             if not relevant_journal_ids:
                 logging.info(f"Skipping class {class_id} as it has no associated journals.")
                 continue
             for subject_id in relevant_journal_ids:
+                if len(all_attendance_context) > 100: break
                 success, attendance_context, attendances = fetch_attendance(quarter_id, class_id, subject_id)
                 if success:
                     # Add identifiers and extend

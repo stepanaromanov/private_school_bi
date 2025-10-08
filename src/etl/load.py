@@ -39,7 +39,9 @@ def load_to_postgres(
 
     # Map pandas dtypes to PostgreSQL types
     def map_dtype_to_pg(dtype, col_name):
-        if pd.api.types.is_integer_dtype(dtype):
+        if pd.api.types.is_bool_dtype(dtype):
+            return 'BOOLEAN'
+        elif pd.api.types.is_integer_dtype(dtype):
             return 'BIGINT'
         elif pd.api.types.is_float_dtype(dtype):
             return 'DOUBLE PRECISION'
