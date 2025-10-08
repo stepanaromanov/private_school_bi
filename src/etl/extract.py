@@ -4,14 +4,37 @@ import ast
 import requests
 import pandas as pd
 import logging
+import datetime
 logger = logging.getLogger("omonschool_etl")
 
 
 
 def eduschool_fetch_attendance_and_marks(token , classes_df, quarters_df, journals_df):
     class_ids = classes_df["id"].tolist()
-    journal_ids = journals_df["id"].tolist()
-    quarter_ids = quarters_df["id"].tolist()
+    journal_ids = journals_df["journal_id"].tolist()
+
+    # filtering active quarter
+    # Convert to datetime
+    quarters_df["starts_at"] = pd.to_datetime(quarters_df["starts_at"], utc=True)
+    quarters_df["ends_at"] = pd.to_datetime(quarters_df["ends_at"], utc=True)
+
+    # Get current UTC date
+    now = datetime.datetime.now(datetime.timezone.utc)
+
+    # Filter only the active quarter (start_date <= now <= end_date)
+    active_quarter = quarters_df[(quarters_df["starts_at"] <= now) & (quarters_df["ends_at"] >= now)]
+
+    # If no active quarter, get last finished one ---
+    if active_quarter.empty:
+        past_df = active_quarter[active_quarter["ends_at"] < now]
+        if not past_df.empty:
+            # keep only the most recent finished one
+            active_quarter = past_df[past_df["ends_at"] == past_df["ends_at"].max()]
+        else:
+            # fallback: first upcoming quarter if none finished yet
+            active_quarter = quarters_df[quarters_df["starts_at"] == quarters_df["starts_at"].min()]
+
+    quarter_ids = active_quarter["id"].tolist()
 
     # Headers from the example
     headers = {
@@ -396,6 +419,9 @@ def eduschool_fetch_journals(token , classes_df):
     df_final = add_timestamp(df_final)
     df_final = normalize_columns(df_final)
 
+    # Save df to CSV
+    save_df_with_timestamp(df=df_final, df_name="journals_data")
+
     return df_final
 
 
@@ -556,6 +582,7 @@ def eduschool_fetch_students(token):
     df = add_timestamp(df)
     df = normalize_columns(df)
     agg_df = normalize_columns(agg_df)
+    agg_df['id'] = 1
 
     # Save dfs to CSV
     save_df_with_timestamp(df=df, df_name="students_data")

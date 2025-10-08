@@ -1,5 +1,3 @@
-
-# load script
 from src.utils.utils_dataframe import *
 from src.utils.utils_general import *
 import pandas as pd
@@ -17,7 +15,7 @@ def load_to_postgres(
         postfix: str,
         primary_key: str = 'id',
         truncate: bool = False,
-        creds_file: str = 'credentials.json',
+        creds_file: str = 'credentials/postgres.json',
         batch_size: int = 1000
 ) -> None:
     """

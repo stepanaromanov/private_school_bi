@@ -86,3 +86,5 @@ def eduschool_token():
             json.dump(new_token_data, f)
 
         logger.info("Eduschool. New token stored.")
+
+    return token
