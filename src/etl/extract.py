@@ -1,17 +1,17 @@
 from src.utils.utils_dataframe import *
 from src.utils.utils_general import *
+import time
 import ast
 import requests
 import pandas as pd
 import logging
+import configs.logging_config
 import datetime
-logger = logging.getLogger("omonschool_etl")
 
 
-
-def eduschool_fetch_attendance_and_marks(token , classes_df, quarters_df, journals_df):
+def eduschool_fetch_attendance_and_marks(token, classes_df, quarters_df, journals_df):
+    class_to_journals = {class_id: group['journal_id'].tolist() for class_id, group in journals_df.groupby('class_id')}
     class_ids = classes_df["id"].tolist()
-    journal_ids = journals_df["journal_id"].tolist()
 
     # filtering active quarter
     # Convert to datetime
@@ -60,7 +60,7 @@ def eduschool_fetch_attendance_and_marks(token , classes_df, quarters_df, journa
     }
 
     # Function to fetch attendance for a class_id, subject_id (journal_id), quarter_id
-    def fetch_attendance(quarter_id, class_id, subject_id):
+    def fetch_attendance(quarter_id, class_id, subject_id, timeout_sec=30):
         base_url = 'https://backend.eduschool.uz/moderator-api/attendances/class'
         params_local = {
             'quarterId': quarter_id,
@@ -68,34 +68,68 @@ def eduschool_fetch_attendance_and_marks(token , classes_df, quarters_df, journa
             'subjectId': subject_id,
             'childId': subject_id
         }
-        response = requests.get(base_url, params=params_local, headers=headers)
-        response.raise_for_status()
-        data = response.json()
+        try:
+            response = requests.get(base_url, params=params_local, headers=headers, timeout=timeout_sec)
+            response.raise_for_status()
+            data = response.json()
 
-        if data['code'] != 0:
-            raise ValueError(
-                f"API error for class {class_id}, subject {subject_id}, quarter {quarter_id}: {data['message']}")
+            if data['code'] != 0:
+                raise ValueError(
+                    f"API error for class {class_id}, subject {subject_id}, quarter {quarter_id}: {data['message']}")
 
-        return data['data']['data'], [att for block in data['data']['data'] for att in block.get('attendances', [])]
+            attendance_context = data['data']['data']
+            attendances = [att for block in data['data']['data'] for att in block.get('attendances', [])]
+            return True, attendance_context, attendances  # Success flag
+        except requests.exceptions.Timeout:
+            logging.error(
+                f"Timeout after {timeout_sec}s for class {class_id}, subject {subject_id}, quarter {quarter_id}")
+            return False, [], []  # Failure flag
+        except Exception as e:
+            logging.error(f"Unexpected error for class {class_id}, subject {subject_id}, quarter {quarter_id}: {e}")
+            return False, [], []  # Failure flag, no raise to allow queueing
 
-    # Loop over combinations (assuming journal_ids and quarter_ids are zipped or cycled if lengths differ; here, loop over all combinations if needed, but preview suggests per-class/subject/quarter)
     all_attendance_context = []
     all_attendances = []
+    retry_queue = []  # List to hold failed (quarter_id, class_id, subject_id) tuples
+
+    # Main loop: Initial fetches
     for quarter_id in quarter_ids:
         for class_id in class_ids:
-            for subject_id in journal_ids:
-                try:
-                    attendance_context, attendances = fetch_attendance(quarter_id, class_id, subject_id)
-                    # Add identifiers to entries
+            relevant_journal_ids = class_to_journals.get(class_id, [])
+            if not relevant_journal_ids:
+                logging.info(f"Skipping class {class_id} as it has no associated journals.")
+                continue
+            for subject_id in relevant_journal_ids:
+                success, attendance_context, attendances = fetch_attendance(quarter_id, class_id, subject_id)
+                if success:
+                    # Add identifiers and extend
                     for att in attendance_context:
                         att['class_id'] = class_id
                         att['subject_id'] = subject_id
                         att['quarter_id'] = quarter_id
                     all_attendance_context.extend(attendance_context)
                     all_attendances.extend(attendances)
-                except Exception as e:
-                    print(f"Error for class {class_id}, subject {subject_id}, quarter {quarter_id}: {e}")
+                else:
+                    retry_queue.append((quarter_id, class_id, subject_id))
 
+    # Second retry queue: Attempt failed combos again (with optional increased timeout)
+    if retry_queue:
+        logging.info(f"Retrying {len(retry_queue)} failed fetches...")
+        for quarter_id, class_id, subject_id in retry_queue:
+            logging.info(
+                f"Retry starting for quarter {quarter_id}, class {class_id}, subject {subject_id} at {time.time()}")
+            success, attendance_context, attendances = fetch_attendance(quarter_id, class_id, subject_id,
+                                                                        timeout_sec=60)  # Increased timeout for retry
+            if success:
+                # Add identifiers and extend
+                for att in attendance_context:
+                    att['class_id'] = class_id
+                    att['subject_id'] = subject_id
+                    att['quarter_id'] = quarter_id
+                all_attendance_context.extend(attendance_context)
+                all_attendances.extend(attendances)
+            else:
+                logging.warning(f"Retry failed again for class {class_id}, subject {subject_id}, quarter {quarter_id}")
 
     # Create DataFrames
     df_attendance_context = pd.DataFrame(all_attendance_context)
@@ -240,7 +274,7 @@ def eduschool_fetch_classes(token):
         lambda s: fill_and_numeric(s, dtype="int"))
     df = df.rename(columns={"letter": "section", "language": "instruction_language"})
 
-    logger.info("Eduschool. Classes have been fetched.")
+    logging.info("Eduschool. Classes have been fetched.")
 
     save_df_with_timestamp(df, df_name="classes_urgench")
 

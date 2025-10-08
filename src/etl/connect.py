@@ -2,9 +2,9 @@
 import json
 import os
 import logging
+import configs.logging_config
 import requests
 from datetime import datetime, timedelta
-logger = logging.getLogger("omonschool_etl")
 
 def eduschool_token():
     # File paths
@@ -17,15 +17,15 @@ def eduschool_token():
             token_data = json.load(f)
             stored_timestamp = datetime.fromisoformat(token_data['timestamp'])
             if datetime.now().replace(tzinfo=None) - stored_timestamp.replace(tzinfo=None) < timedelta(weeks=49):
-                logger.info("Eduschool. Using existing valid token.")
+                logging.info("Eduschool. Using existing valid token.")
                 token = token_data['token']
                 # Exit or use the token as needed
             else:
-                logger.info("Eduschool. Token is older than 49 weeks. Deleting old file and refreshing.")
+                logging.info("Eduschool. Token is older than 49 weeks. Deleting old file and refreshing.")
                 os.remove(TOKEN_FILE)
                 refresh_token = True
     else:
-        logger.info("Eduschool. No token file found. Refreshing token.")
+        logging.info("Eduschool. No token file found. Refreshing token.")
         refresh_token = True
 
     # Refresh the token if needed
@@ -85,6 +85,6 @@ def eduschool_token():
         with open(TOKEN_FILE, 'w') as f:
             json.dump(new_token_data, f)
 
-        logger.info("Eduschool. New token stored.")
+        logging.info("Eduschool. New token stored.")
 
     return token

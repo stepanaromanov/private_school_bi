@@ -1,8 +1,8 @@
 # pip freeze > requirements.txt
 import logging
+import configs.logging_config
 from pathlib import Path
 from datetime import datetime, timedelta
-logger = logging.getLogger("omonschool_etl")
 
 
 def setup_logging():

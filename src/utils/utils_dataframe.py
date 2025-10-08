@@ -2,31 +2,54 @@
 import re
 import pandas as pd
 import logging
+import configs.logging_config
 from pathlib import Path
 from datetime import datetime, timedelta
-logger = logging.getLogger("omonschool_etl")
+import pandas as pd
 
 
-def add_timestamp(df: pd.DataFrame, col: str = "updated_timestamp") -> pd.DataFrame:
+def add_timestamp(df: pd.DataFrame, col: str = "fetched_timestamp") -> pd.DataFrame:
     """
-    Add (or overwrite) a timestamp column in Uzbekistan time (Asia/Tashkent).
-    Timestamp is formatted as a string for safe Postgres inserts.
+    Add a current timestamp column in Asia/Tashkent timezone for ETL tracking.
+    Convert any existing date columns from ISO 8601 to Postgres TIMESTAMP format,
+    rename them to <original>_timestamp, and drop the original column.
 
     Parameters
     ----------
     df : pd.DataFrame
         Input DataFrame.
     col : str, optional
-        Column name to store the timestamp. Default = 'event_time'.
+        Column name to store the current timestamp. Default = 'fetched_timestamp'.
 
     Returns
     -------
     pd.DataFrame
-        DataFrame with added timestamp column.
+        DataFrame with:
+        - new column `col` containing current Tashkent timestamp
+        - date columns converted to Postgres format, renamed to `<original>_timestamp`
     """
     tz = "Asia/Tashkent"
     df_out = df.copy()
-    df_out[col] = pd.Timestamp.now(tz=tz).strftime("%Y-%m-%d %H:%M:%S")
+
+    # 1. Add current timestamp column
+    now_str = pd.Timestamp.now(tz=tz).strftime("%Y-%m-%d %H:%M:%S")
+    df_out[col] = now_str
+
+    # 2. List of known date columns to convert
+    date_cols = [
+        'date', 'created_at', 'starts_at', 'ends_at',
+        'updated_at', 'birthday', 'contract_date',
+        'lesson_date', 'attendance_date'
+    ]
+
+    # 3. Convert ISO 8601 strings, rename, and drop original
+    for dc in date_cols:
+        if dc in df_out.columns:
+            new_col = f"{dc}_timestamp"
+            df_out[new_col] = pd.to_datetime(df_out[dc], utc=True) \
+                .dt.tz_convert(tz) \
+                .dt.strftime("%Y-%m-%d %H:%M:%S")
+            df_out.drop(columns=dc, inplace=True)
 
     return df_out
 

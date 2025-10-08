@@ -5,9 +5,8 @@ import psycopg
 from psycopg.rows import dict_row
 import json
 import logging
+import configs.logging_config
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
-logger = logging.getLogger("omonschool_etl")
 
 def load_to_postgres(
         df: pd.DataFrame,
@@ -34,9 +33,9 @@ def load_to_postgres(
     }
 
     # Check data types
-    logger.info(f"[{table_base_name}{postfix}] Data types:")
+    logging.info(f"[{table_base_name}{postfix}] Data types:")
     for col, dtype in df.dtypes.items():
-        logger.info(f"[{table_base_name}{postfix}] {col}: {dtype}")
+        logging.info(f"[{table_base_name}{postfix}] {col}: {dtype}")
 
     # Map pandas dtypes to PostgreSQL types
     def map_dtype_to_pg(dtype, col_name):
@@ -68,18 +67,18 @@ def load_to_postgres(
                         columns_def[-1] += ' PRIMARY KEY'
 
                 create_table_sql += ',\n'.join(columns_def) + '\n);'
-                logger.info(f"[{table_name}] Create table SQL:\n{create_table_sql}")
+                logging.info(f"[{table_name}] Create table SQL:\n{create_table_sql}")
 
                 cur.execute(create_table_sql)
                 conn.commit()
-                logger.info(f"[{table_name}] Table created or verified.")
+                logging.info(f"[{table_name}] Table created or verified.")
 
                 # Truncate table if requested
                 if truncate:
                     truncate_sql = f"TRUNCATE TABLE {table_name};"
                     cur.execute(truncate_sql)
                     conn.commit()
-                    logger.info(f"[{table_name}] Table truncated.")
+                    logging.info(f"[{table_name}] Table truncated.")
 
                 # Prepare upsert SQL
                 update_cols = [col for col in df.columns if col != primary_key]
@@ -104,7 +103,7 @@ def load_to_postgres(
                                 updates = len(results) - inserts
                                 return inserts, updates
                     except Exception as e:
-                        logger.error(f"[{table_name}] Batch execution error: {e}")
+                        logging.error(f"[{table_name}] Batch execution error: {e}")
                         return 0, 0
 
                 # Parallel insertion using ThreadPoolExecutor
@@ -121,13 +120,13 @@ def load_to_postgres(
                         inserts, updates = future.result()
                         total_inserts += inserts
                         total_updates += updates
-                        logger.info(f"[{table_name}] Processed batch: {inserts} inserted, {updates} updated.")
+                        logging.info(f"[{table_name}] Processed batch: {inserts} inserted, {updates} updated.")
 
-                logger.info(f"[{table_name}] Total: {total_inserts} rows inserted, {total_updates} rows updated.")
+                logging.info(f"[{table_name}] Total: {total_inserts} rows inserted, {total_updates} rows updated.")
 
             except Exception as e:
-                logger.error(f"[{table_name}] Error during load: {e}")
+                logging.error(f"[{table_name}] Error during load: {e}")
                 conn.rollback()
                 raise
             finally:
-                logger.info(f"[{table_name}] PostgreSQL connection closed.")
+                logging.info(f"[{table_name}] PostgreSQL connection closed.")
