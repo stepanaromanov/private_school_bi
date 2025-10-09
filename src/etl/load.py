@@ -37,6 +37,9 @@ def load_to_postgres(
     for col, dtype in df.dtypes.items():
         logging.info(f"[{table_base_name}{postfix}] {col}: {dtype}")
 
+    # delete duplicate columns if they exist
+    df = df.loc[:, ~df.columns.duplicated()]
+
     # Map pandas dtypes to PostgreSQL types
     def map_dtype_to_pg(dtype, col_name):
         if pd.api.types.is_bool_dtype(dtype):

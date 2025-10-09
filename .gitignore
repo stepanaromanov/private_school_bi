@@ -2,6 +2,8 @@
 venv/
 .env/
 .venv/
+test_env/
+.test_env/
 
 # IDE settings
 .idea/
@@ -11,7 +13,7 @@ __pycache__/
 *.pyc
 
 # OS files
-.DS_Store
+.DS_Storels
 
 # Project-specific folders
 credentials/
