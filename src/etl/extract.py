@@ -94,12 +94,15 @@ def eduschool_fetch_attendance_and_marks(token, classes_df, quarters_df, journal
 
     # Main loop: Initial fetches
     for quarter_id in quarter_ids:
+        # if len(all_attendance_context) > 100: break
         for class_id in class_ids:
+            # if len(all_attendance_context) > 100: break
             relevant_journal_ids = class_to_journals.get(class_id, [])
             if not relevant_journal_ids:
                 logging.info(f"Skipping class {class_id} as it has no associated journals.")
                 continue
             for subject_id in relevant_journal_ids:
+                # if len(all_attendance_context) > 100: break
                 success, attendance_context, attendances = fetch_attendance(quarter_id, class_id, subject_id)
                 if success:
                     # Add identifiers and extend
@@ -137,13 +140,34 @@ def eduschool_fetch_attendance_and_marks(token, classes_df, quarters_df, journal
     df_attendance_context.drop('attendances', axis=1, inplace=True)
 
     # Flatten 'period' — always keep indices 0–8
+    def flatten_period(cell):
+        """
+        Flatten a period cell into a compact string like:
+        'lessonHour:state:_id'
+        Args:
+            cell: Input cell containing period data (dict or stringified dict).
+
+        Returns:
+            str or None: Flattened representation or None if invalid.
+        """
+        if pd.isna(cell) or cell == '{}':
+            return None
+        try:
+            d = ast.literal_eval(cell) if isinstance(cell, str) else cell
+            lesson_hour = d.get('lessonHour')
+            state = d.get('state')
+            period_id = d.get('_id')
+            return f"{lesson_hour}:{state}:{period_id}"
+        except Exception:
+            return None
+
+    # Flatten 'period' — always keep indices 0–8
     if 'period' in df_attendance_context.columns:
         for i in range(9):  # ✅ fixed indices 0–8
             period_series = df_attendance_context['period'].apply(
                 lambda x: x[i] if isinstance(x, list) and i < len(x) else None
             )
-            df_attendance_context[f'period__{i}'] = period_series
-
+            df_attendance_context[f'period__{i}'] = period_series.apply(flatten_period)
         # Drop the original nested column
         df_attendance_context.drop(columns='period', inplace=True)
 
@@ -170,7 +194,9 @@ def eduschool_fetch_attendance_and_marks(token, classes_df, quarters_df, journal
 
     # apply to all columns matching pattern
     cols = [c for c in df_attendances.columns if c.startswith('markHistory_')]
-    df_attendances[cols] = df_attendances[cols].map(flatten_mark_history)
+    cols_per = [c for c in df_attendance_context.columns if c.startswith('period_')]
+    df_attendances[cols] = df_attendances[cols].map(flatten_mark_history).fillna('NA').astype(str)
+    df_attendance_context[cols_per] = df_attendance_context[cols_per].map(flatten_period).fillna('NA').astype(str)
 
     df_attendance_context.fillna(0, inplace=True)
     df_attendance_context = clean_string_columns(df_attendance_context)
@@ -461,7 +487,8 @@ def eduschool_fetch_journals(token , classes_df):
 
     # Create final DataFrame with only specified columns
     df_final = pd.DataFrame(extracted_data)
-
+    cols = [c for c in df_final.columns if c.startswith('teacher_')]
+    df_final[cols] = df_final[cols].fillna('NA').astype(str)
     df_final.fillna(0, inplace=True)
     df_final = clean_string_columns(df_final)
     df_final = normalize_columns(df_final)
@@ -613,6 +640,8 @@ def eduschool_fetch_students(token):
 
         # Drop original nested column
         df.drop(columns='parents', inplace=True)
+        cols = [c for c in df.columns if c.startswith('parents_')]
+        df[cols] = df[cols].fillna('NA').astype(str)
 
     # Flatten status (dict) - keep only '_id', 'name', 'state', 'isDefault'
     if 'status' in df.columns:
