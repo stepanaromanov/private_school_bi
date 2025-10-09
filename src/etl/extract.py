@@ -208,9 +208,12 @@ def eduschool_fetch_attendance_and_marks(token, classes_df, quarters_df, journal
     df_attendances = normalize_columns(df_attendances)
     df_attendances = add_timestamp(df_attendances)
 
+    df_attendance_context.name = "education_attendance_context"
+    df_attendances.name = "education_attendances"
+
     # Save dfs to CSV
-    save_df_with_timestamp(df=df_attendance_context, df_name="attendance_context")
-    save_df_with_timestamp(df=df_attendances, df_name="attendances")
+    save_df_with_timestamp(df=df_attendance_context)
+    save_df_with_timestamp(df=df_attendances)
 
     return df_attendance_context, df_attendances
 
@@ -313,7 +316,8 @@ def eduschool_fetch_classes(token):
 
     logging.info("Eduschool. Classes have been fetched.")
 
-    save_df_with_timestamp(df, df_name="classes_urgench")
+    df.name = "education_classes"
+    save_df_with_timestamp(df=df)
 
     return df
 
@@ -396,8 +400,10 @@ def eduschool_fetch_employees(token):
     df = normalize_columns(df)
     df = add_timestamp(df)
 
+    df.name = "education_employees"
+
     # Save df to CSV
-    save_df_with_timestamp(df=df, df_name="employees_data")
+    save_df_with_timestamp(df=df)
 
     return df
 
@@ -495,7 +501,8 @@ def eduschool_fetch_journals(token , classes_df):
     df_final = add_timestamp(df_final)
 
     # Save df to CSV
-    save_df_with_timestamp(df=df_final, df_name="journals_data")
+    df_final.name="education_journals"
+    save_df_with_timestamp(df=df_final)
 
     return df_final
 
@@ -547,8 +554,9 @@ def eduschool_fetch_quarters(token):
     df = normalize_columns(df)
     df = add_timestamp(df)
 
+    df.name="education_quarters"
     # Save dfs to CSV
-    save_df_with_timestamp(df=df, df_name="quarters_data")
+    save_df_with_timestamp(df=df)
 
     return df
 
@@ -674,9 +682,12 @@ def eduschool_fetch_students(token):
     agg_df = add_timestamp(agg_df)
     agg_df['id'] = 1
 
+    agg_df.name= "education_students_aggregated"
+    df.name = "education_students"
+
     # Save dfs to CSV
-    save_df_with_timestamp(df=df, df_name="students_data")
-    save_df_with_timestamp(df=agg_df, df_name="students_aggregated_data")
+    save_df_with_timestamp(df=df)
+    save_df_with_timestamp(df=agg_df)
 
     return df, agg_df
 

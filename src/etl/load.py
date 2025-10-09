@@ -10,6 +10,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 def load_to_postgres(
         df: pd.DataFrame,
+        dept: str,
         table_base_name: str,
         postfix: str,
         primary_key: str = 'id',
@@ -54,7 +55,7 @@ def load_to_postgres(
             return 'TEXT'
 
     # Table name with postfix
-    table_name = f"{table_base_name}{postfix}"
+    table_name = f"{dept}_{table_base_name}_{postfix}"
 
     # Connect using psycopg3
     with psycopg.connect(**conn_params, row_factory=dict_row) as conn:

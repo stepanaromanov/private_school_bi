@@ -1,10 +1,13 @@
 # pip freeze > requirements.txt
 import re
 import pandas as pd
+from io import StringIO
 import logging
+import numpy as np
 import configs.logging_config
 from pathlib import Path
 from datetime import datetime, timedelta
+from etl_metadata.blueprints import expected_columns_dict
 import pandas as pd
 
 
@@ -135,6 +138,81 @@ def fill_and_numeric(series, fill_value=0, dtype="float"):
     return series
 
 
+def log_df(df: pd.DataFrame):
+    df_name = getattr(df, "name", "unidentified")
+    logging.info(f"Starting analysis for DataFrame: {df_name}")
+    try:
+        # Check expected columns if provided
+        if df_name in expected_columns_dict:
+            expected_cols = expected_columns_dict[df_name]
+            actual_cols = set(df.columns)
+            if actual_cols != expected_cols:
+                missing = expected_cols - actual_cols
+                extra = actual_cols - expected_cols
+                error_msg = f"Columns mismatch for {df_name}: "
+                if missing:
+                    error_msg += f"Missing: {missing}. "
+                if extra:
+                    error_msg += f"Extra: {extra}."
+                logging.error(error_msg)
+            else:
+                logging.info("Expected columns match.")
+
+        # 1. Shape Check
+        logging.info(f"1. Shape: {df.shape}")
+
+        # 2. Columns List
+        logging.info(f"2. Columns: {list(df.columns)}")
+
+        # 3. Data Types
+        logging.info(f"3. Data Types:\n{df.dtypes.to_string()}")
+
+        # 4. Info Summary
+        buffer = StringIO()
+        df.info(buf=buffer)
+        logging.info(f"4. Info:\n{buffer.getvalue()}")
+
+        # 5. Descriptive Statistics
+        logging.info(f"5. Describe:\n{df.describe().to_string()}")
+
+        # 6. Null Values Count
+        logging.info(f"6. Null Values:\n{df.isnull().sum().to_string()}")
+
+        # 7. Null Percentage
+        null_pct = (df.isnull().sum() / len(df)) * 100
+        logging.info(f"7. Null Percentages:\n{null_pct.to_string()}")
+
+        # 8. Duplicate Rows Count
+        logging.info(f"8. Duplicate Rows: {df.duplicated().sum()}")
+
+        # 9. Duplicate Percentage
+        dup_pct = (df.duplicated().sum() / len(df)) * 100 if len(df) > 0 else 0
+        logging.info(f"9. Duplicate Percentage: {dup_pct}")
+
+        # 10. Unique Values per Column
+        logging.info(f"10. Unique Values:\n{df.nunique().to_string()}")
+
+        # 11. Head Preview
+        logging.info(f"11. Head:\n{df.head(5).to_string()}")
+
+        # 12. Outlier Detection (IQR)
+        numeric_cols = df.select_dtypes(include=np.number).columns
+        if not numeric_cols.empty:
+            logging.info("18. Outliers (IQR method):")
+            for col in numeric_cols:
+                Q1 = df[col].quantile(0.25)
+                Q3 = df[col].quantile(0.75)
+                IQR = Q3 - Q1
+                outliers_count = ((df[col] < (Q1 - 1.5 * IQR)) | (df[col] > (Q3 + 1.5 * IQR))).sum()
+                logging.info(f"   - Outliers in {col}: {outliers_count}")
+        else:
+            logging.info("18. No numeric columns for outlier detection.")
+
+    except Exception as e:
+        logging.error(f"Error analyzing {df_name}: {str(e)}")
+
+    logging.info(f"Finished analysis for DataFrame: {df_name}\n{'-' * 50}")
+
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     """
     Rename DataFrame columns into snake_case:
@@ -163,7 +241,6 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 def save_df_with_timestamp(
     df: pd.DataFrame,
-    df_name: str,
     backup_dir: str = "data_backup"
 ) -> str:
     """
@@ -176,8 +253,12 @@ def save_df_with_timestamp(
 
     Returns:
         str: Path of the saved CSV file.
+
+    also use log df function to analyze df before saving
     """
     try:
+        log_df(df)
+        df_name = getattr(df, "name", "unidentified")
         # Uzbekistan is UTC+5
         now_uzbek = datetime.utcnow() + timedelta(hours=5)
 
