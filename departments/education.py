@@ -30,12 +30,12 @@ try:
     logging.info(f"Fetched {len(quarters)} quarters.")
     load_to_postgres(df=quarters, table_base_name="quarters", postfix="_2526", primary_key="id")
 
-    # if datetime.date.today().weekday() == 6:
-    attendance_context, attendances = eduschool_fetch_attendance_and_marks(token, classes_df=classes, quarters_df=quarters, journals_df=journals)
-    logging.info(f"Fetched {len(attendances)} attendance records.")
-    logging.info(f"Fetched {len(attendance_context)} attendance context records.")
-    load_to_postgres(df=attendances, table_base_name="attendances", postfix="_2526", primary_key="id")
-    load_to_postgres(df=attendance_context, table_base_name="attendance_context", postfix="_2526", primary_key="id")
+    if datetime.date.today().weekday() == 6:
+        attendance_context, attendances = eduschool_fetch_attendance_and_marks(token, classes_df=classes, quarters_df=quarters, journals_df=journals)
+        logging.info(f"Fetched {len(attendances)} attendance records.")
+        logging.info(f"Fetched {len(attendance_context)} attendance context records.")
+        load_to_postgres(df=attendances, table_base_name="attendances", postfix="_2526", primary_key="id")
+        load_to_postgres(df=attendance_context, table_base_name="attendance_context", postfix="_2526", primary_key="id")
     
 except Exception as e:
     logging.exception(f"ETL run failed: {e}")  # <- includes traceback in log file
