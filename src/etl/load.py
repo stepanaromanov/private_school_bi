@@ -21,6 +21,9 @@ def load_to_postgres(
     """
     Load a pandas DataFrame to PostgreSQL with upsert functionality (psycopg 3.x).
     """
+    df_name = getattr(df, "name", "unidentified")
+    logging.info(f"{'=' * 50}\n\nLoading to postgres for DataFrame: {df_name}\n\n{'=' * 50}")
+
     # Load credentials
     with open(creds_file, 'r') as f:
         creds = json.load(f)
@@ -32,11 +35,6 @@ def load_to_postgres(
         'user': creds['user'],
         'password': creds['password']
     }
-
-    # Check data types
-    logging.info(f"[{table_base_name}{postfix}] Data types:")
-    for col, dtype in df.dtypes.items():
-        logging.info(f"[{table_base_name}{postfix}] {col}: {dtype}")
 
     # delete duplicate columns if they exist
     df = df.loc[:, ~df.columns.duplicated()]
@@ -73,8 +71,6 @@ def load_to_postgres(
                         columns_def[-1] += ' PRIMARY KEY'
 
                 create_table_sql += ',\n'.join(columns_def) + '\n);'
-                logging.info(f"[{table_name}] Create table SQL:\n{create_table_sql}")
-
                 cur.execute(create_table_sql)
                 conn.commit()
                 logging.info(f"[{table_name}] Table created or verified.")
@@ -126,10 +122,12 @@ def load_to_postgres(
                         inserts, updates = future.result()
                         total_inserts += inserts
                         total_updates += updates
-
+                logging.info(f"Total inserts made: {total_inserts}, total updates made: {total_updates}")
             except Exception as e:
                 logging.error(f"[{table_name}] Error during load: {e}")
                 conn.rollback()
                 raise
             finally:
                 logging.info(f"[{table_name}] PostgreSQL connection closed.")
+    logging.info(f"{'=' * 50}\n\nLoading to postgres for DataFrame: {df_name} finished.\n\n{'=' * 50}")
+

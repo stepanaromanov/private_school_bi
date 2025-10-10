@@ -140,7 +140,7 @@ def fill_and_numeric(series, fill_value=0, dtype="float"):
 
 def log_df(df: pd.DataFrame):
     df_name = getattr(df, "name", "unidentified")
-    logging.info(f"Starting analysis for DataFrame: {df_name}")
+    logging.info(f"{'=' * 50}\n\nStarting analysis for DataFrame: {df_name}\n\n{'=' * 50}")
     try:
         # Check expected columns if provided
         if df_name in expected_columns_dict:
@@ -149,14 +149,14 @@ def log_df(df: pd.DataFrame):
             if actual_cols != expected_cols:
                 missing = expected_cols - actual_cols
                 extra = actual_cols - expected_cols
-                error_msg = f"Columns mismatch for {df_name}: "
+                error_msg = f"!!! COLUMNS MISMATCH FOR {df_name}: "
                 if missing:
-                    error_msg += f"Missing: {missing}. "
+                    error_msg += f"MISSING: {missing}. "
                 if extra:
-                    error_msg += f"Extra: {extra}."
+                    error_msg += f"EXTRA: {extra}."
                 logging.error(error_msg)
             else:
-                logging.info("Expected columns match.")
+                logging.info("EXPECTED COLUMNS MATCH.")
 
         # 1. Shape Check
         logging.info(f"1. Shape: {df.shape}")
@@ -211,7 +211,7 @@ def log_df(df: pd.DataFrame):
     except Exception as e:
         logging.error(f"Error analyzing {df_name}: {str(e)}")
 
-    logging.info(f"Finished analysis for DataFrame: {df_name}\n{'-' * 50}")
+    logging.info(f"Finished analysis for DataFrame: {df_name}")
 
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -284,4 +284,5 @@ __all__ = ["clean_string_columns",
            "add_timestamp",
            "normalize_columns",
            "fill_and_numeric",
+           "log_df",
            "save_df_with_timestamp"]

@@ -149,7 +149,7 @@ expected_columns_dict = {
         "birthday_timestamp",
         "contract_date_timestamp",
     },
-    "education_students_aggregated": {
+    "education_agg_finance": {
         "total_balance",
         "total_debted",
         "total_owned",
