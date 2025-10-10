@@ -198,7 +198,7 @@ def log_df(df: pd.DataFrame):
         # 12. Outlier Detection (IQR)
         numeric_cols = df.select_dtypes(include=np.number).columns
         if not numeric_cols.empty:
-            logging.info("18. Outliers (IQR method):")
+            logging.info("12. Outliers (IQR method):")
             for col in numeric_cols:
                 Q1 = df[col].quantile(0.25)
                 Q3 = df[col].quantile(0.75)
@@ -206,7 +206,7 @@ def log_df(df: pd.DataFrame):
                 outliers_count = ((df[col] < (Q1 - 1.5 * IQR)) | (df[col] > (Q3 + 1.5 * IQR))).sum()
                 logging.info(f"   - Outliers in {col}: {outliers_count}")
         else:
-            logging.info("18. No numeric columns for outlier detection.")
+            logging.info("12. No numeric columns for outlier detection.")
 
     except Exception as e:
         logging.error(f"Error analyzing {df_name}: {str(e)}")
