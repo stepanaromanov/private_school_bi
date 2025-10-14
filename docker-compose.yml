@@ -110,7 +110,7 @@ services:
     volumes:
       - /home/user/python_scripts/private_school_bi:/app
     working_dir: /app
-    command: bash -c "apt-get update && apt-get install -y --no-install-recommends cron procps rsyslog && pip install --no-cache-dir --root-user-action=ignore -r requirements.txt && echo '0 1 * * * root cd /app && pip install --no-cache-dir --root-user-action=ignore -r requirements.txt >> /var/log/requirements_install.log 2>&1' > /etc/cron.d/bi_daily && echo '0 2 * * * root cd /app && /usr/local/bin/python /app/main.py >> /var/log/bi_script.log 2>&1' >> /etc/cron.d/bi_daily && chmod 0644 /etc/cron.d/bi_daily && chown root:root /etc/cron.d/bi_daily && mkdir -p /var/log && touch /var/log/bi_script.log /var/log/requirements_install.log && rsyslogd && cron -f & while [ ! -f /var/log/bi_script.log ]; do sleep 1; done; tail -f /var/log/bi_script.log"
+    command: bash -c "apt-get update && apt-get install -y --no-install-recommends cron procps rsyslog && pip install --no-cache-dir --root-user-action=ignore -r requirements.txt && echo '0 21 * * * root cd /app && pip install --no-cache-dir --root-user-action=ignore -r requirements.txt >> /var/log/requirements_install.log 2>&1' > /etc/cron.d/bi_daily && echo '30 20 * * * root cd /app && /usr/local/bin/python /app/main.py >> /var/log/bi_script.log 2>&1' >> /etc/cron.d/bi_daily && chmod 0644 /etc/cron.d/bi_daily && chown root:root /etc/cron.d/bi_daily && mkdir -p /var/log && touch /var/log/bi_script.log /var/log/requirements_install.log && rsyslogd && cron -f & while [ ! -f /var/log/bi_script.log ]; do sleep 1; done; tail -f /var/log/bi_script.log"
 
 # Volumes for persistent storage
 volumes:
