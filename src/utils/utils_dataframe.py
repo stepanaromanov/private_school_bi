@@ -149,14 +149,14 @@ def log_df(df: pd.DataFrame):
             if actual_cols != expected_cols:
                 missing = expected_cols - actual_cols
                 extra = actual_cols - expected_cols
-                error_msg = f"!!! COLUMNS MISMATCH FOR {df_name}: "
+                error_msg = f"❌🏛️ COLUMNS MISMATCH FOR {df_name}: "
                 if missing:
                     error_msg += f"MISSING: {missing}. "
                 if extra:
                     error_msg += f"EXTRA: {extra}."
                 logging.error(error_msg)
             else:
-                logging.info("EXPECTED COLUMNS MATCH.")
+                logging.info("✅🏛️ EXPECTED COLUMNS MATCH.")
 
         # 1. Shape Check
         logging.info(f"1. Shape: {df.shape}")
