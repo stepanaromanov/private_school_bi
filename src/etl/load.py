@@ -137,13 +137,13 @@ def load_history_to_postgres(
         dept: str,
         table_base_name: str,
         postfix: str,
-        primary_key: str = 'id',
+        primary_key: str = 'id',  # This is now the original key, but not used as PK
         truncate: bool = False,
         creds_file: str = 'credentials/postgres.json',
         batch_size: int = 1000
 ) -> None:
     """
-    Load a pandas DataFrame to PostgreSQL with append functionality (insert new historical values, skip existing).
+    Load a pandas DataFrame to PostgreSQL by appending new historical values with auto-generated primary key.
     """
     df_name = getattr(df, "name", "unidentified")
     logging.info(f"{'=' * 50}\n\nLoading to postgres for DataFrame: {df_name}\n\n{'=' * 50}")
@@ -183,36 +183,34 @@ def load_history_to_postgres(
     with psycopg.connect(**conn_params, row_factory=dict_row) as conn:
         with conn.cursor() as cur:
             try:
-                # Create table IF NOT EXISTS
+                # Create table IF NOT EXISTS with auto-generated hist_id as PRIMARY KEY
                 create_table_sql = f"""
-                CREATE TABLE IF NOT EXISTS {table_name} (
-                """
+                 CREATE TABLE IF NOT EXISTS {table_name} (
+                     hist_id SERIAL PRIMARY KEY,
+                 """
                 columns_def = []
                 for col in df.columns:
                     pg_type = map_dtype_to_pg(df[col].dtype, col)
                     columns_def.append(f'    {col} {pg_type}')
-                    if col == primary_key:
-                        columns_def[-1] += ' PRIMARY KEY'
 
                 create_table_sql += ',\n'.join(columns_def) + '\n);'
                 cur.execute(create_table_sql)
                 conn.commit()
-                logging.info(f"[{table_name}] Table created or verified.")
+                logging.info(f"[{table_name}] HISTORY 🗂 Table created or verified with auto-generated hist_id PK.")
 
-                # Truncate table if requested
+                # Truncate table if requested (note: does not reset serial by default)
                 if truncate:
                     truncate_sql = f"TRUNCATE TABLE {table_name};"
                     cur.execute(truncate_sql)
                     conn.commit()
                     logging.info(f"[{table_name}] Table truncated.")
 
-                # Prepare insert SQL with ON CONFLICT DO NOTHING
+                # Prepare insert SQL without ON CONFLICT, hist_id auto-generated
                 insert_sql = f"""
-                INSERT INTO {table_name} ({', '.join(df.columns)})
-                VALUES ({', '.join(['%s'] * len(df.columns))})
-                ON CONFLICT ({primary_key}) DO NOTHING
-                RETURNING (xmax = 0) AS inserted;
-                """
+                 INSERT INTO {table_name} ({', '.join(df.columns)})
+                 VALUES ({', '.join(['%s'] * len(df.columns))})
+                 RETURNING hist_id;
+                 """
 
                 # Function to execute a batch and count inserts
                 def execute_batch(batch_data):
@@ -222,7 +220,7 @@ def load_history_to_postgres(
                                 batch_cur.executemany(insert_sql, batch_data, returning=True)
                                 results = batch_cur.fetchall()
                                 batch_conn.commit()
-                                inserts = len(results)  # All returned rows are inserts
+                                inserts = len(results)  # All are inserts
                                 return inserts
                     except Exception as e:
                         logging.error(f"[{table_name}] Batch execution error: {e}")
