@@ -26,6 +26,7 @@ if token:
     try:
         students, agg_finance = eduschool_fetch_students(token)
         load_to_postgres(df=students, dept="education", table_base_name="students", postfix="_2526", primary_key="id")
+        load_history_to_postgres(df=students, dept="education", table_base_name="students", postfix="_2526", primary_key="id")
         load_to_postgres(df=agg_finance, dept="education", table_base_name="agg_finance", postfix="_2526")
         logging.info("Students and finance data successfully fetched and loaded.")
     except Exception as e:

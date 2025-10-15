@@ -131,3 +131,120 @@ def load_to_postgres(
                 logging.info(f"[{table_name}] PostgreSQL connection closed.")
     logging.info(f"{'=' * 50}\n\nLoading to postgres for DataFrame: {df_name} finished.\n\n{'=' * 50}")
 
+
+def load_history_to_postgres(
+        df: pd.DataFrame,
+        dept: str,
+        table_base_name: str,
+        postfix: str,
+        primary_key: str = 'id',
+        truncate: bool = False,
+        creds_file: str = 'credentials/postgres.json',
+        batch_size: int = 1000
+) -> None:
+    """
+    Load a pandas DataFrame to PostgreSQL with append functionality (insert new historical values, skip existing).
+    """
+    df_name = getattr(df, "name", "unidentified")
+    logging.info(f"{'=' * 50}\n\nLoading to postgres for DataFrame: {df_name}\n\n{'=' * 50}")
+
+    # Load credentials
+    with open(creds_file, 'r') as f:
+        creds = json.load(f)
+
+    conn_params = {
+        'host': creds['host'],
+        'port': creds['port'],
+        'dbname': creds['database'],
+        'user': creds['user'],
+        'password': creds['password']
+    }
+
+    # delete duplicate columns if they exist
+    df = df.loc[:, ~df.columns.duplicated()]
+
+    # Map pandas dtypes to PostgreSQL types
+    def map_dtype_to_pg(dtype, col_name):
+        if pd.api.types.is_bool_dtype(dtype):
+            return 'BOOLEAN'
+        elif pd.api.types.is_integer_dtype(dtype):
+            return 'BIGINT'
+        elif pd.api.types.is_float_dtype(dtype):
+            return 'DOUBLE PRECISION'
+        elif pd.api.types.is_datetime64_any_dtype(dtype) or 'timestamp' in col_name.lower():
+            return 'TIMESTAMP'
+        else:
+            return 'TEXT'
+
+    # Table name with postfix
+    table_name = f"{dept}_{table_base_name}_history_{postfix}"
+
+    # Connect using psycopg3
+    with psycopg.connect(**conn_params, row_factory=dict_row) as conn:
+        with conn.cursor() as cur:
+            try:
+                # Create table IF NOT EXISTS
+                create_table_sql = f"""
+                CREATE TABLE IF NOT EXISTS {table_name} (
+                """
+                columns_def = []
+                for col in df.columns:
+                    pg_type = map_dtype_to_pg(df[col].dtype, col)
+                    columns_def.append(f'    {col} {pg_type}')
+                    if col == primary_key:
+                        columns_def[-1] += ' PRIMARY KEY'
+
+                create_table_sql += ',\n'.join(columns_def) + '\n);'
+                cur.execute(create_table_sql)
+                conn.commit()
+                logging.info(f"[{table_name}] Table created or verified.")
+
+                # Truncate table if requested
+                if truncate:
+                    truncate_sql = f"TRUNCATE TABLE {table_name};"
+                    cur.execute(truncate_sql)
+                    conn.commit()
+                    logging.info(f"[{table_name}] Table truncated.")
+
+                # Prepare insert SQL with ON CONFLICT DO NOTHING
+                insert_sql = f"""
+                INSERT INTO {table_name} ({', '.join(df.columns)})
+                VALUES ({', '.join(['%s'] * len(df.columns))})
+                ON CONFLICT ({primary_key}) DO NOTHING
+                RETURNING (xmax = 0) AS inserted;
+                """
+
+                # Function to execute a batch and count inserts
+                def execute_batch(batch_data):
+                    try:
+                        with psycopg.connect(**conn_params) as batch_conn:
+                            with batch_conn.cursor() as batch_cur:
+                                batch_cur.executemany(insert_sql, batch_data, returning=True)
+                                results = batch_cur.fetchall()
+                                batch_conn.commit()
+                                inserts = len(results)  # All returned rows are inserts
+                                return inserts
+                    except Exception as e:
+                        logging.error(f"[{table_name}] Batch execution error: {e}")
+                        return 0
+
+                # Parallel insertion using ThreadPoolExecutor
+                total_inserts = 0
+                futures = []
+                with ThreadPoolExecutor(max_workers=4) as executor:
+                    for i in range(0, len(df), batch_size):
+                        batch_df = df.iloc[i:i + batch_size]
+                        batch_data = [tuple(row) for row in batch_df.itertuples(index=False)]
+                        futures.append(executor.submit(execute_batch, batch_data))
+
+                    for future in as_completed(futures):
+                        inserts = future.result()
+                        total_inserts += inserts
+                logging.info(f"Total inserts made: {total_inserts}")
+            except Exception as e:
+                logging.error(f"[{table_name}] Error during load: {e}")
+                conn.rollback()
+                raise
+            finally:
+                logging.info(f"[{table_name}] PostgreSQL connection closed.")
+    logging.info(f"{'=' * 50}\n\nLoading to postgres for DataFrame: {df_name} HISTORY 🗂 finished.\n\n{'=' * 50}")
