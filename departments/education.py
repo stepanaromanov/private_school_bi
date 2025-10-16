@@ -17,6 +17,7 @@ if token:
     try:
         classes = eduschool_fetch_classes(token)
         load_to_postgres(df=classes, dept="education", table_base_name="classes", postfix="_2526", primary_key="id")
+        load_history_to_postgres(df=classes, dept="education", table_base_name="classes", postfix="_2526", primary_key="id")
         logging.info("Classes successfully fetched and loaded.")
     except Exception as e:
         logging.exception(f"Failed to fetch/load classes: {e}")
@@ -37,11 +38,12 @@ if token:
     try:
         employees = eduschool_fetch_employees(token)
         load_to_postgres(df=employees, dept="education", table_base_name="employees", postfix="_2526", primary_key="id")
+        load_history_to_postgres(df=employees, dept="education", table_base_name="employees", postfix="_2526", primary_key="id")
         logging.info("Employees successfully fetched and loaded.")
     except Exception as e:
         logging.exception(f"Failed to fetch/load employees: {e}")
         employees = None
-
+"""
     # --- JOURNALS ---
     try:
         if classes is not None:
@@ -78,5 +80,5 @@ if token:
             logging.warning("Skipped attendance — missing dependent data (classes, quarters, or journals).")
     except Exception as e:
         logging.exception(f"Failed to fetch/load attendance or marks: {e}")
-
+"""
 logging.info("EDUCATION DEPARTMENT ETL run completed.")
