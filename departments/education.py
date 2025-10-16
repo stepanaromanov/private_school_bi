@@ -43,7 +43,7 @@ if token:
     except Exception as e:
         logging.exception(f"Failed to fetch/load employees: {e}")
         employees = None
-"""
+
     # --- JOURNALS ---
     try:
         if classes is not None:
@@ -80,5 +80,5 @@ if token:
             logging.warning("Skipped attendance — missing dependent data (classes, quarters, or journals).")
     except Exception as e:
         logging.exception(f"Failed to fetch/load attendance or marks: {e}")
-"""
+
 logging.info("EDUCATION DEPARTMENT ETL run completed.")
