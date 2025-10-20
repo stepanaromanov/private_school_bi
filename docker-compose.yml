@@ -70,6 +70,7 @@ services:
       AIRFLOW__WEBSERVER__BASE_URL: ${AIRFLOW__WEBSERVER__BASE_URL}
       AIRFLOW__WEBSERVER__ENABLE_PROXY_FIX: "true"
     volumes:
+      - /home/user/python_scripts/private_school_bi/logs:/bi_logs
       - airflow_dags:/opt/airflow/dags
       - airflow_logs:/opt/airflow/logs
       - airflow_plugins:/opt/airflow/plugins
