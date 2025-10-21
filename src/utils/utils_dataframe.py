@@ -162,7 +162,7 @@ def log_df(df: pd.DataFrame):
         logging.info(f"1. Shape: {df.shape}")
 
         # 2. Columns List
-        logging.info(f"2. Columns: {list(df.columns)}")
+        # logging.info(f"2. Columns: {list(df.columns)}")
 
         # 3. Data Types
         logging.info(f"3. Data Types:\n{df.dtypes.to_string()}")
@@ -190,10 +190,10 @@ def log_df(df: pd.DataFrame):
         logging.info(f"9. Duplicate Percentage: {dup_pct}")
 
         # 10. Unique Values per Column
-        logging.info(f"10. Unique Values:\n{df.nunique().to_string()}")
+        # logging.info(f"10. Unique Values:\n{df.nunique().to_string()}")
 
         # 11. Head Preview
-        logging.info(f"11. Head:\n{df.head(5).to_string()}")
+        # logging.info(f"11. Head:\n{df.head(5).to_string()}")
 
         # 12. Outlier Detection (IQR)
         numeric_cols = df.select_dtypes(include=np.number).columns

@@ -4,6 +4,8 @@ venv/
 .venv/
 test_env/
 .test_env/
+.airflow_env
+airflow_env/
 
 # IDE settings
 .idea/
