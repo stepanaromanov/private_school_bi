@@ -1,0 +1,152 @@
+Server statistics script
+#!/bin/bash
+
+# Script: daily_server_stats.sh
+# Purpose: Collect server statistics and Docker logs daily, save to logs/YYYY_MM_DD
+# Run via cron: 0 0 * * * /path/to/daily_server_stats.sh
+# Requirements: Must have sudo privileges for Docker commands
+
+# Exit on error
+set -e
+
+# Define log directory and file based on current date
+LOG_DIR="/home/user/python_scripts/private_school_bi/logs/"
+LOG_FILE="$LOG_DIR/$(date +%Y_%m_%d).log"
+
+# Create log directory if it doesn't exist
+mkdir -p "$LOG_DIR" || {
+    echo "Error: Failed to create log directory $LOG_DIR" >&2
+    exit 1
+}
+
+# Function to print section header
+print_section() {
+    local title="$1"
+    echo "===========================================" >> "$LOG_FILE"
+    echo "$title" >> "$LOG_FILE"
+    echo "===========================================" >> "$LOG_FILE"
+    echo "" >> "$LOG_FILE"
+}
+
+# Initialize log file
+{
+    echo "Server Statistics Report"
+    echo "Generated: $(date '+%Y-%m-%d %H:%M:%S %Z')"
+    echo ""
+} > "$LOG_FILE"
+
+# 1. Daily CPU Load Average
+print_section "Daily CPU Load Average"
+
+if command -v sar >/dev/null 2>&1; then
+    echo "Average CPU Load Today:" >> "$LOG_FILE"
+    # This prints the average CPU usage across all cores for today
+    sar -q | grep "Average" >> "$LOG_FILE"
+else
+    echo "sar command not found — showing current load averages instead:" >> "$LOG_FILE"
+    cat /proc/loadavg >> "$LOG_FILE"
+fi
+echo "" >> "$LOG_FILE"
+
+# 2. Top 10 Processes by CPU Usage
+print_section "Top 10 Processes by CPU Usage (PID, %CPU, Command)"
+
+if command -v sar >/dev/null 2>&1; then
+    echo "Average CPU Utilization Today:" >> "$LOG_FILE"
+    sar -u | grep "Average" >> "$LOG_FILE"
+else
+    echo "sar not available — showing instantaneous CPU utilization instead:" >> "$LOG_FILE"
+    mpstat 1 1 | grep "all" >> "$LOG_FILE" 2>/dev/null || top -bn1 | head -n 5 >> "$LOG_FILE"
+fi
+echo "" >> "$LOG_FILE"
+
+ps -eo pid,%cpu,comm --sort=-%cpu | head -n 11 >> "$LOG_FILE" || {
+    echo "Error: Failed to retrieve top CPU processes" >> "$LOG_FILE"
+}
+echo "" >> "$LOG_FILE"
+
+# 3. Top 10 Processes by Memory Usage
+print_section "Top 10 Processes by Memory Usage (PID, %MEM, Command)"
+
+if command -v sar >/dev/null 2>&1; then
+    echo "Average Memory Utilization Today:" >> "$LOG_FILE"
+    sar -r | grep "Average" >> "$LOG_FILE"
+else
+    echo "sar not available — showing current memory usage instead:" >> "$LOG_FILE"
+    free -h >> "$LOG_FILE"
+fi
+echo "" >> "$LOG_FILE"
+
+ps -eo pid,%mem,comm --sort=-%mem | head -n 11 >> "$LOG_FILE" || {
+    echo "Error: Failed to retrieve top memory processes" >> "$LOG_FILE"
+}
+echo "" >> "$LOG_FILE"
+
+# 4. Disk Available Space
+print_section "Disk Available Space"
+df -h >> "$LOG_FILE" || {
+    echo "Error: Failed to retrieve disk space information" >> "$LOG_FILE"
+}
+echo "" >> "$LOG_FILE"
+
+# 5. All Docker Containers
+print_section "All Docker Containers"
+sudo docker ps -a -s >> "$LOG_FILE" 2>/dev/null || {
+    echo "Error: Failed to retrieve Docker container sizes (check sudo permissions)" >> "$LOG_FILE"
+}
+echo "" >> "$LOG_FILE"
+
+# 6. Network Total Incoming/Outgoing Bytes (Cumulative, excluding lo)
+print_section "Network Total Incoming/Outgoing Bytes (Cumulative)"
+cat /proc/net/dev | grep -v lo | awk 'BEGIN {rx=0; tx=0} NR>2 {rx += $2; tx += $10} END {print "Total RX Bytes: " rx "\nTotal TX Bytes: " tx}' >> "$LOG_FILE" || {
+    echo "Error: Failed to retrieve network statistics" >> "$LOG_FILE"
+}
+echo "" >> "$LOG_FILE"
+
+# 7. User Session History for Today
+print_section "User Session History for Today"
+
+# Get today's date (YYYY-MM-DD format)
+today=$(date +%Y-%m-%d)
+
+# Use 'last' to show all login/logout records from today
+echo "Login Sessions Today ($today):" >> "$LOG_FILE"
+last -F | grep "$today" >> "$LOG_FILE" || {
+    echo "Error: Failed to retrieve user session history" >> "$LOG_FILE"
+}
+echo "" >> "$LOG_FILE"
+
+# Optionally, show currently logged-in users
+echo "Currently Logged-in Users:" >> "$LOG_FILE"
+who >> "$LOG_FILE" || {
+    echo "Error: Failed to retrieve current user list" >> "$LOG_FILE"
+}
+echo "" >> "$LOG_FILE"
+
+# 8. Filtered ERROR and WARN Messages from Docker Containers
+print_section "Filtered ERROR and WARN Messages from Docker Containers (since $(date +%Y-%m-%d))"
+
+for container in $(sudo docker ps -a -q 2>/dev/null); do
+    # Get container name (remove leading slash)
+    name=$(sudo docker inspect -f '{{.Name}}' "$container" 2>/dev/null | sed 's/^\///') || continue
+    upper_name=$(echo "$name" | tr '[:lower:]' '[:upper:]')
+    echo "CONTAINER: $upper_name ($container)" >> "$LOG_FILE"
+    # Fetch logs and prefix each line with the container name
+    if ! sudo docker logs --since "$(date +%Y-%m-%d)" "$container" 2>&1 | \
+        grep -iE 'error|warn' | \
+        sed "s/^/[${upper_name}] /" >> "$LOG_FILE"; then
+        echo "[${upper_name}] No logs or failed to retrieve logs" >> "$LOG_FILE"
+    fi
+    echo "" >> "$LOG_FILE"
+done
+
+# Finalize report
+print_section "End of Report"
+echo "Report completed at $(date '+%Y-%m-%d %H:%M:%S %Z')" >> "$LOG_FILE"
+
+# Ensure log file permissions are secure
+chmod 600 "$LOG_FILE" || {
+    echo "Warning: Failed to set permissions on $LOG_FILE" >&2
+}
+
+exit 0

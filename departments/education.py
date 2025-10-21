@@ -9,7 +9,7 @@ try:
     token = eduschool_token()
     logging.info("Token successfully retrieved.")
 except Exception as e:
-    logging.exception(f"Failed to retrieve token: {e}")
+    logging.exception(f"❌Failed to retrieve token: {e}")
     token = None
 
 if token:
