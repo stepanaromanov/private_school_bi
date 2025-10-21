@@ -161,44 +161,44 @@ def log_df(df: pd.DataFrame):
         # 1. Shape Check
         logging.info(f"1. Shape: {df.shape}")
 
-        # 2. Columns List
-        # logging.info(f"2. Columns: {list(df.columns)}")
+        # Columns List
+        # logging.info(f"Columns: {list(df.columns)}")
 
-        # 3. Data Types
-        logging.info(f"3. Data Types:\n{df.dtypes.to_string()}")
+        # Data Types
+        # logging.info(f"2. Data Types:\n{df.dtypes.to_string()}")
 
-        # 4. Info Summary
+        # 2. Info Summary
         buffer = StringIO()
         df.info(buf=buffer)
-        logging.info(f"4. Info:\n{buffer.getvalue()}")
+        logging.info(f"2. Info:\n{buffer.getvalue()}")
 
-        # 5. Descriptive Statistics
-        logging.info(f"5. Describe:\n{df.describe().to_string()}")
+        # 3. Descriptive Statistics
+        logging.info(f"3. Describe:\n{df.describe().to_string()}")
 
-        # 6. Null Values Count
-        logging.info(f"6. Null Values:\n{df.isnull().sum().to_string()}")
+        # Null Values Count
+        # logging.info(f"Null Values:\n{df.isnull().sum().to_string()}")
 
-        # 7. Null Percentage
+        # 4. Null Percentage
         null_pct = (df.isnull().sum() / len(df)) * 100
-        logging.info(f"7. Null Percentages:\n{null_pct.to_string()}")
+        logging.info(f"4. Null Percentages:\n{null_pct.to_string()}")
 
-        # 8. Duplicate Rows Count
-        logging.info(f"8. Duplicate Rows: {df.duplicated().sum()}")
+        # 5. Duplicate Rows Count
+        logging.info(f"5. Duplicate Rows: {df.duplicated().sum()}")
 
-        # 9. Duplicate Percentage
+        # 6. Duplicate Percentage
         dup_pct = (df.duplicated().sum() / len(df)) * 100 if len(df) > 0 else 0
-        logging.info(f"9. Duplicate Percentage: {dup_pct}")
+        logging.info(f"6. Duplicate Percentage: {dup_pct}")
 
-        # 10. Unique Values per Column
-        # logging.info(f"10. Unique Values:\n{df.nunique().to_string()}")
+        # 7. Unique Values per Column
+        logging.info(f"7. Unique Values:\n{df.nunique().to_string()}")
 
-        # 11. Head Preview
-        # logging.info(f"11. Head:\n{df.head(5).to_string()}")
+        # Head Preview
+        # logging.info(f"Head:\n{df.head(5).to_string()}")
 
-        # 12. Outlier Detection (IQR)
+        # 8. Outlier Detection (IQR)
         numeric_cols = df.select_dtypes(include=np.number).columns
         if not numeric_cols.empty:
-            logging.info("12. Outliers (IQR method):")
+            logging.info("8. Outliers (IQR method):")
             for col in numeric_cols:
                 Q1 = df[col].quantile(0.25)
                 Q3 = df[col].quantile(0.75)
@@ -206,7 +206,7 @@ def log_df(df: pd.DataFrame):
                 outliers_count = ((df[col] < (Q1 - 1.5 * IQR)) | (df[col] > (Q3 + 1.5 * IQR))).sum()
                 logging.info(f"   - Outliers in {col}: {outliers_count}")
         else:
-            logging.info("12. No numeric columns for outlier detection.")
+            logging.info("8. No numeric columns for outlier detection.")
 
     except Exception as e:
         logging.error(f"Error analyzing {df_name}: {str(e)}")

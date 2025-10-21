@@ -20,7 +20,7 @@ if token:
         load_history_to_postgres(df=classes, dept="education", table_base_name="classes", postfix="_2526", primary_key="id")
         logging.info("Classes successfully fetched and loaded.")
     except Exception as e:
-        logging.exception(f"Failed to fetch/load classes: {e}")
+        logging.exception(f"❌Failed to fetch/load classes: {e}")
         classes = None
 
     # --- STUDENTS & AGG FINANCE ---
@@ -31,7 +31,7 @@ if token:
         load_to_postgres(df=agg_finance, dept="education", table_base_name="agg_finance", postfix="_2526")
         logging.info("Students and finance data successfully fetched and loaded.")
     except Exception as e:
-        logging.exception(f"Failed to fetch/load students or finance data: {e}")
+        logging.exception(f"❌Failed to fetch/load students or finance data: {e}")
         students, agg_finance = None, None
 
     # --- EMPLOYEES ---
@@ -41,7 +41,7 @@ if token:
         load_history_to_postgres(df=employees, dept="education", table_base_name="employees", postfix="_2526", primary_key="id")
         logging.info("Employees successfully fetched and loaded.")
     except Exception as e:
-        logging.exception(f"Failed to fetch/load employees: {e}")
+        logging.exception(f"❌Failed to fetch/load employees: {e}")
         employees = None
 
     # --- JOURNALS ---
@@ -54,7 +54,7 @@ if token:
             logging.warning("Skipped journals — missing classes data.")
             journals = None
     except Exception as e:
-        logging.exception(f"Failed to fetch/load journals: {e}")
+        logging.exception(f"❌Failed to fetch/load journals: {e}")
         journals = None
 
     # --- QUARTERS ---
@@ -63,7 +63,7 @@ if token:
         load_to_postgres(df=quarters, dept="education", table_base_name="quarters", postfix="_2526", primary_key="id")
         logging.info("Quarters successfully fetched and loaded.")
     except Exception as e:
-        logging.exception(f"Failed to fetch/load quarters: {e}")
+        logging.exception(f"❌Failed to fetch/load quarters: {e}")
         quarters = None
 
     # --- ATTENDANCE & MARKS ---
@@ -77,8 +77,8 @@ if token:
             load_to_postgres(df=attendance_context, dept="education", table_base_name="attendance_context", postfix="_2526", primary_key="id")
             logging.info("Attendance and marks successfully fetched and loaded.")
         else:
-            logging.warning("Skipped attendance — missing dependent data (classes, quarters, or journals).")
+            logging.warning("❌Skipped attendance — missing dependent data (classes, quarters, or journals).")
     except Exception as e:
-        logging.exception(f"Failed to fetch/load attendance or marks: {e}")
+        logging.exception(f"❌Failed to fetch/load attendance or marks: {e}")
 
 logging.info("EDUCATION DEPARTMENT ETL run completed.")
