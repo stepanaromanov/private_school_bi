@@ -140,7 +140,7 @@ def fill_and_numeric(series, fill_value=0, dtype="float"):
 
 
 def log_df(df: pd.DataFrame):
-    df_name = getattr(df, "name", "unidentified")
+    df_name = df.attrs.get("name") or "unidentified"
     logging.info(f"{'=' * 50}\n\nStarting analysis for DataFrame: {df_name}\n\n{'=' * 50}")
     try:
         # Check expected columns if provided
@@ -259,7 +259,7 @@ def save_df_with_timestamp(
     """
     try:
         log_df(df)
-        df_name = getattr(df, "name", "unidentified")
+        df_name = df.attrs.get("name") or "unidentified"
         # Uzbekistan is UTC+5
         now_uzbek = datetime.utcnow() + timedelta(hours=5)
 

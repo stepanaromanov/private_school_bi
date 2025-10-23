@@ -5,6 +5,8 @@ import logging
 import configs.logging_config
 import datetime
 
+logging.info("EDUCATION DEPARTMENT ETL has started.")
+
 try:
     token = eduschool_token()
     logging.info("Token successfully retrieved.")
