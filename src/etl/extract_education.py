@@ -208,8 +208,8 @@ def eduschool_fetch_attendance_and_marks(token, classes_df, quarters_df, journal
     df_attendances = normalize_columns(df_attendances)
     df_attendances = add_timestamp(df_attendances)
 
-    df_attendance_context.name = "education_attendance_context"
-    df_attendances.name = "education_attendances"
+    df_attendance_context.attrs["name"] = "education_attendance_context"
+    df_attendances.attrs["name"] = "education_attendances"
 
     # Save dfs to CSV
     save_df_with_timestamp(df=df_attendance_context)
@@ -316,7 +316,7 @@ def eduschool_fetch_classes(token):
 
     logging.info("Eduschool. Classes have been fetched.")
 
-    df.name = "education_classes"
+    df.attrs["name"] = "education_classes"
     save_df_with_timestamp(df=df)
 
     return df
@@ -400,7 +400,7 @@ def eduschool_fetch_employees(token):
     df = normalize_columns(df)
     df = add_timestamp(df)
 
-    df.name = "education_employees"
+    df.attrs["name"] = "education_employees"
 
     # Save df to CSV
     save_df_with_timestamp(df=df)
@@ -501,7 +501,7 @@ def eduschool_fetch_journals(token , classes_df):
     df_final = add_timestamp(df_final)
 
     # Save df to CSV
-    df_final.name="education_journals"
+    df_final.attrs["name"]="education_journals"
     save_df_with_timestamp(df=df_final)
 
     return df_final
@@ -554,7 +554,7 @@ def eduschool_fetch_quarters(token):
     df = normalize_columns(df)
     df = add_timestamp(df)
 
-    df.name="education_quarters"
+    df.attrs["name"] = "education_quarters"
     # Save dfs to CSV
     save_df_with_timestamp(df=df)
 
@@ -682,8 +682,8 @@ def eduschool_fetch_students(token):
     agg_df = add_timestamp(agg_df)
     agg_df['id'] = 1
 
-    agg_df.name= "education_students_aggregated"
-    df.name = "education_students"
+    agg_df.attrs["name"] = "education_students_aggregated"
+    df.attrs["name"] = "education_students"
 
     # Save dfs to CSV
     save_df_with_timestamp(df=df)
