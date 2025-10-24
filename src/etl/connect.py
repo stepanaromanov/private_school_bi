@@ -14,6 +14,7 @@ def amocrm_headers(access_token):
         "Content-Type": "application/json"
     }
 
+
 def amocrm_initial_token(auth_code):
     # Load credentials from JSON file
     with open("credentials/amocrm.json", "r") as f:
@@ -50,47 +51,50 @@ def amocrm_initial_token(auth_code):
 
 
 def amocrm_refresh_token():
-    # Load credentials from JSON file
-    with open("credentials/amocrm.json", "r") as f:
-        creds = json.load(f)
+    try:
+        # Load credentials from JSON file
+        with open("credentials/amocrm.json", "r") as f:
+            creds = json.load(f)
 
-    AMO_DOMAIN = creds["base_domain"]
-    CLIENT_ID = creds["client_id"]
-    CLIENT_SECRET = creds["client_secret"]
-    REFRESH_TOKEN = creds["refresh_token"]
-    REDIRECT_URI = creds["redirect_uri"]
+        AMO_DOMAIN = creds["base_domain"]
+        CLIENT_ID = creds["client_id"]
+        CLIENT_SECRET = creds["client_secret"]
+        REFRESH_TOKEN = creds["refresh_token"]
+        REDIRECT_URI = creds["redirect_uri"]
 
-    BASE_URL = f'https://{AMO_DOMAIN}/api/v4'
+        BASE_URL = f'https://{AMO_DOMAIN}/api/v4'
 
-    # Token initialization for amocrm-api (optional helper)
-    tokens.default_token_manager(
-        client_id=CLIENT_ID,
-        client_secret=CLIENT_SECRET,
-        subdomain=AMO_DOMAIN.split(".")[0],
-        redirect_url=REDIRECT_URI,
-    )
+        # Access token refresh function
+        def amocrm_get_access_token():
+            """Refresh access token via OAuth2"""
+            url = f'https://{AMO_DOMAIN}/oauth2/access_token'
 
-    # Access token refresh function
-    def amocrm_get_access_token():
-        """Refresh access token via OAuth2"""
-        url = f'https://{AMO_DOMAIN}/oauth2/access_token'
-        data = {
-            "client_id": CLIENT_ID,
-            "client_secret": CLIENT_SECRET,
-            "grant_type": "refresh_token",
-            "refresh_token": REFRESH_TOKEN,
-            "redirect_uri": REDIRECT_URI
-        }
-        response = requests.post(url, json=data)
-        response.raise_for_status()
-        token_data = response.json()
+            data = {
+                "client_id": CLIENT_ID,
+                "client_secret": CLIENT_SECRET,
+                "grant_type": "refresh_token",
+                "refresh_token": REFRESH_TOKEN,
+                "redirect_uri": REDIRECT_URI
+            }
 
-        # Optionally update local credentials.json
-        creds["refresh_token"] = token_data.get("refresh_token", REFRESH_TOKEN)
-        with open("credentials/amocrm.json", "w") as f:
-            json.dump(creds, f, indent=4)
+            response = requests.post(url, json=data)
+            response.raise_for_status()
+            token_data = response.json()
 
-        return token_data["access_token"]
+            # Optionally update local credentials.json
+            creds["access_token"] = token_data["access_token"]
+            creds["refresh_token"] = token_data["refresh_token"]
+
+            with open("credentials/amocrm.json", "w") as f:
+                json.dump(creds, f, indent=4)
+
+            return token_data["access_token"]
+
+        access_token = amocrm_get_access_token()
+        return access_token
+
+    except Exception as e:
+        print(f"❌ Failed to get token: {e}")
 
 
 def eduschool_token():
