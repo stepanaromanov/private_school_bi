@@ -5,7 +5,7 @@ import psycopg
 from psycopg.rows import dict_row
 import json
 import logging
-import configs.logging_config
+from configs import logging_config
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 def load_to_postgres(

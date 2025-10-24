@@ -2,7 +2,7 @@
 import json
 import os
 import logging
-import configs.logging_config
+from configs import logging_config
 import requests
 from amocrm.v2 import tokens
 from datetime import datetime, timedelta

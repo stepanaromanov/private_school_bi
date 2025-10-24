@@ -5,7 +5,7 @@ import ast
 import requests
 import pandas as pd
 import logging
-import configs.logging_config
+from configs import logging_config
 import datetime
 
 

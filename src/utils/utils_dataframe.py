@@ -1,10 +1,9 @@
 # pip freeze > requirements.txt
 import re
-import pandas as pd
 from io import StringIO
 import logging
 import numpy as np
-import configs.logging_config
+from configs import logging_config
 from pathlib import Path
 from datetime import datetime, timedelta
 from etl_metadata.blueprints import expected_columns_dict

@@ -2,7 +2,7 @@ from src.etl.connect import *
 from src.etl.extract_sales import *
 from src.etl.load import *
 import logging
-import configs.logging_config
+from configs import logging_config
 import datetime
 
 logging.info("SALES DEPARTMENT ETL has started.")
@@ -11,6 +11,7 @@ with open("credentials/amocrm.json", "r") as f:
     creds = json.load(f)
 
 try:
+    # initial_amocrm_access_token = amocrm_initial_token(auth_code='')
     amocrm_access_token = creds["access_token"]
     headers = amocrm_headers(amocrm_access_token)
     logging.info("Amocrm token and headers successfully retrieved.")
