@@ -148,7 +148,7 @@ expected_columns_dict = {
         "fetched_timestamp",
         "birthday_timestamp",
         "contract_date_timestamp",
-        "contract_end_date_timestamp"
+        "contract_end_date_timestamp",
     },
     "education_agg_finance": {
         "total_balance",
@@ -156,6 +156,24 @@ expected_columns_dict = {
         "total_owned",
         "fetched_timestamp",
         "id",
+    },
+    "sales_catalogs": {
+        "id",
+        "name",
+        "created_by",
+        "updated_by",
+        "sort",
+        "type",
+        "can_add_elements",
+        "can_show_in_cards",
+        "can_link_multiple",
+        "can_be_deleted",
+        "sdk_widget_code",
+        "account_id",
+        "links",
+        "fetched_timestamp",
+        "created_at_timestamp",
+        "updated_at_timestamp",
     },
     "sales_companies": {
         "id",
@@ -218,6 +236,26 @@ expected_columns_dict = {
         "closed_at_timestamp",
         "closest_task_at_timestamp",
     },
+    "sales_tasks": {
+        "id",
+        "created_by",
+        "updated_by",
+        "responsible_user_id",
+        "group_id",
+        "entity_id",
+        "entity_type",
+        "duration",
+        "is_completed",
+        "task_type_id",
+        "text",
+        "result",
+        "complete_till",
+        "account_id",
+        "links",
+        "fetched_timestamp",
+        "created_at_timestamp",
+        "updated_at_timestamp",
+    },
     "sales_users": {
         "id",
         "name",
@@ -226,6 +264,5 @@ expected_columns_dict = {
         "rights",
         "links",
         "fetched_timestamp",
-    },
-
+    }
 }
