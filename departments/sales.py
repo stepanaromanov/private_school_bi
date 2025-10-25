@@ -53,13 +53,26 @@ if headers:
     except Exception as e:
         logging.exception(f"❌Failed to fetch/load companies: {e}")
 
+    # --- LOSS REASONS ---
+    try:
+        loss_reasons = amocrm_get_loss_reasons(headers)
+        load_to_postgres(df=loss_reasons, dept="sales", table_base_name="loss_reasons", postfix="25", primary_key="id")
+        load_history_to_postgres(df=loss_reasons, dept="sales", table_base_name="loss_reasons", postfix="25", primary_key="id")
+        logging.info("Loss reasons successfully fetched and loaded.")
+    except Exception as e:
+        logging.exception(f"❌Failed to fetch/load loss reasons: {e}")
+
+
     # --- PIPELINES AND STATUSES ---
     try:
         pipelines_df, statuses_df = amocrm_get_pipelines_statuses(headers)
+
         load_to_postgres(df=pipelines_df, dept="sales", table_base_name="pipelines", postfix="25", primary_key="id")
-        load_to_postgres(df=statuses_df, dept="sales", table_base_name="statuses", postfix="25", primary_key="id")
         load_history_to_postgres(df=pipelines_df, dept="sales", table_base_name="pipelines", postfix="25", primary_key="id")
-        load_history_to_postgres(df=statuses_df, dept="sales", table_base_name="statuses", postfix="25", primary_key="id")
+
+        load_to_postgres(df=statuses_df, dept="sales", table_base_name="statuses", postfix="25", primary_key="status_id")
+        load_history_to_postgres(df=statuses_df, dept="sales", table_base_name="statuses", postfix="25", primary_key="status_id")
+
         logging.info("Pipelines and statuses successfully fetched and loaded.")
     except Exception as e:
         logging.exception(f"❌Failed to fetch/load pipelines and statuses: {e}")
@@ -72,6 +85,14 @@ if headers:
         logging.info("Tasks successfully fetched and loaded.")
     except Exception as e:
         logging.exception(f"❌Failed to fetch/load tasks: {e}")
+
+    # --- TASK TYPES ---
+    try:
+        task_types = amocrm_get_task_types(headers)
+        load_to_postgres(df=task_types, dept="sales", table_base_name="task_types", postfix="25", primary_key="id")
+        logging.info("Task types successfully fetched and loaded.")
+    except Exception as e:
+        logging.exception(f"❌Failed to fetch/load task types: {e}")
 
     # --- USERS ---
     try:

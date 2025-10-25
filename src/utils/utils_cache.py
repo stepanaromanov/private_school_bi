@@ -4,7 +4,7 @@ import logging
 
 def update_json_cache(file_name: str, updates: dict, dir: str):
     """
-    Load JSON from cache/{file_name}.json,
+    Load JSON from cache_folder/{file_name}.json,
     update it with the given dictionary,
     and save it back.
 
@@ -26,6 +26,8 @@ def update_json_cache(file_name: str, updates: dict, dir: str):
     if not isinstance(data, dict):
         logging.info(f"File {path} is not a dict — overwriting with new one.")
         data = {}
+
+    data.update(updates)
 
     # Save back to file
     with open(path, "w", encoding="utf-8") as f:

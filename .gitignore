@@ -7,6 +7,7 @@ test_env/
 .airflow_env
 airflow_env/
 
+
 # IDE settings
 .idea/
 
@@ -28,4 +29,8 @@ data_backup/
 *.pyd
 *.pdb
 .pytest_cache/
+
+# local cache
+.amocrm_cache
+amocrm_cache/
 

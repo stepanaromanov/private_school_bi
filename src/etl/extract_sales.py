@@ -110,6 +110,29 @@ def amocrm_get_leads(headers):
     return leads_df
 
 
+def amocrm_get_loss_reasons(headers):
+    logging.info("SALES: Downloading loss reasons...")
+    response = requests.get(f"{BASE_URL}/leads/loss_reasons", headers=headers)
+    response.raise_for_status()
+    loss_reasons = response.json()["_embedded"]["loss_reasons"]
+    loss_reasons_df = pd.DataFrame(loss_reasons)
+
+    loss_reasons_df.fillna(0, inplace=True)
+    loss_reasons_df = clean_string_columns(loss_reasons_df)
+    loss_reasons_df = normalize_columns(loss_reasons_df)
+
+    loss_reasons_df["created_at"] = pd.to_datetime(loss_reasons_df["created_at"], unit="s")
+    loss_reasons_df["updated_at"] = pd.to_datetime(loss_reasons_df["updated_at"], unit="s")
+    loss_reasons_df = add_timestamp(loss_reasons_df)
+
+    loss_reasons_dict = loss_reasons_df.set_index('id')['name'].astype(str).to_dict()
+    update_json_cache("loss_reasons", loss_reasons_dict, 'amocrm_cache')
+
+    loss_reasons_df.attrs["name"] = "sales_loss_reasons"
+    save_df_with_timestamp(df=loss_reasons_df)
+    return loss_reasons_df
+
+
 def amocrm_get_pipelines_statuses(headers):
     logging.info("SALES: Downloading pipelines...")
     pipelines_resp = requests.get(f"{BASE_URL}/leads/pipelines", headers=headers)
@@ -147,6 +170,13 @@ def amocrm_get_pipelines_statuses(headers):
 
     save_df_with_timestamp(df=statuses_df)
 
+    # update cache files
+    statuses_dict = statuses_df.set_index('status_id')['status_name'].astype(str).to_dict()
+    update_json_cache("statuses", statuses_dict, 'amocrm_cache')
+
+    pipelines_dict = pipelines_df.set_index('id')['name'].astype(str).to_dict()
+    update_json_cache("pipelines", pipelines_dict, 'amocrm_cache')
+
     return pipelines_df, statuses_df
 
 
@@ -170,6 +200,26 @@ def amocrm_get_tasks(headers):
     return tasks_df
 
 
+def amocrm_get_task_types(headers):
+    logging.info("SALES: Downloading task types...")
+    response = requests.get(f"{BASE_URL}/account?with=task_types", headers=headers)
+    response.raise_for_status()
+    task_types = response.json()["_embedded"]["task_types"]
+    task_types_df = pd.DataFrame(task_types)
+
+    task_types_df.fillna(0, inplace=True)
+    task_types_df = clean_string_columns(task_types_df)
+    task_types_df = normalize_columns(task_types_df)
+
+    task_types_df = add_timestamp(task_types_df)
+    task_types_dict = task_types_df.set_index('id')['code'].astype(str).to_dict()
+    update_json_cache("task_types", task_types_dict, 'amocrm_cache')
+
+    task_types_df.attrs["name"] = "sales_task_types"
+    save_df_with_timestamp(df=task_types_df)
+    return task_types_df
+
+
 def amocrm_get_users(headers):
     logging.info("SALES: Downloading users...")
     users = amocrm_get_all_items("users", headers)
@@ -181,6 +231,9 @@ def amocrm_get_users(headers):
 
     users_df = add_timestamp(users_df)
     users_df.attrs["name"] = "sales_users"
+
+    users_dict = users_df.set_index('id')['name'].astype(str).to_dict()
+    update_json_cache("users", users_dict, 'amocrm_cache')
 
     save_df_with_timestamp(df=users_df)
     return users_df
