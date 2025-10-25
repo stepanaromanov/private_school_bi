@@ -53,6 +53,17 @@ if headers:
     except Exception as e:
         logging.exception(f"❌Failed to fetch/load companies: {e}")
 
+    # --- PIPELINES AND STATUSES ---
+    try:
+        pipelines_df, statuses_df = amocrm_get_pipelines_statuses(headers)
+        load_to_postgres(df=pipelines_df, dept="sales", table_base_name="pipelines", postfix="25", primary_key="id")
+        load_to_postgres(df=statuses_df, dept="sales", table_base_name="statuses", postfix="25", primary_key="id")
+        load_history_to_postgres(df=pipelines_df, dept="sales", table_base_name="pipelines", postfix="25", primary_key="id")
+        load_history_to_postgres(df=statuses_df, dept="sales", table_base_name="statuses", postfix="25", primary_key="id")
+        logging.info("Pipelines and statuses successfully fetched and loaded.")
+    except Exception as e:
+        logging.exception(f"❌Failed to fetch/load pipelines and statuses: {e}")
+
     # --- TASKS ---
     try:
         tasks = amocrm_get_tasks(headers)

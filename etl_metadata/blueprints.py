@@ -249,7 +249,7 @@ expected_columns_dict = {
         "task_type_id",
         "text",
         "result",
-        "complete_till",
+        "complete_till_timestamp",
         "account_id",
         "links",
         "fetched_timestamp",

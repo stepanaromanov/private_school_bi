@@ -1,5 +1,6 @@
 import requests
 from src.utils.utils_dataframe import *
+from src.utils.utils_cache import *
 import pandas as pd
 import logging
 import json
@@ -109,6 +110,46 @@ def amocrm_get_leads(headers):
     return leads_df
 
 
+def amocrm_get_pipelines_statuses(headers):
+    logging.info("SALES: Downloading pipelines...")
+    pipelines_resp = requests.get(f"{BASE_URL}/leads/pipelines", headers=headers)
+    pipelines_resp.raise_for_status()
+    pipelines = pipelines_resp.json()["_embedded"]["pipelines"]
+    pipelines_df = pd.DataFrame(pipelines)
+
+    pipelines_df.fillna(0, inplace=True)
+    pipelines_df = clean_string_columns(pipelines_df)
+    pipelines_df = normalize_columns(pipelines_df)
+
+    pipelines_df = add_timestamp(pipelines_df)
+    pipelines_df.attrs["name"] = "sales_pipelines"
+
+    save_df_with_timestamp(df=pipelines_df)
+
+    logging.info("SALES: Downloading statuses...")
+
+    statuses = []
+    for pipeline in pipelines:
+        for status in pipeline["_embedded"].get("statuses", []):
+            statuses.append({
+                "pipeline_id": pipeline["id"],
+                "status_id": status["id"],
+                "status_name": status["name"]
+            })
+
+    statuses_df = pd.DataFrame(statuses)
+    statuses_df.fillna(0, inplace=True)
+    statuses_df = clean_string_columns(statuses_df)
+    statuses_df = normalize_columns(statuses_df)
+
+    statuses_df = add_timestamp(statuses_df)
+    statuses_df.attrs["name"] = "sales_pipeline_statuses"
+
+    save_df_with_timestamp(df=statuses_df)
+
+    return pipelines_df, statuses_df
+
+
 def amocrm_get_tasks(headers):
     logging.info("SALES: Downloading tasks...")
     tasks = amocrm_get_all_items("tasks", headers)
@@ -120,6 +161,8 @@ def amocrm_get_tasks(headers):
 
     tasks_df["created_at"] = pd.to_datetime(tasks_df["created_at"], unit="s")
     tasks_df["updated_at"] = pd.to_datetime(tasks_df["updated_at"], unit="s")
+    tasks_df["complete_till"] = pd.to_datetime(tasks_df["complete_till"], unit="s")
+
     tasks_df = add_timestamp(tasks_df)
 
     tasks_df.attrs["name"] = "sales_tasks"
