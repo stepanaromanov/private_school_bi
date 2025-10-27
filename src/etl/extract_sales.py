@@ -237,29 +237,3 @@ def amocrm_get_users(headers):
 
     save_df_with_timestamp(df=users_df)
     return users_df
-
-
-'''
-# Notes
-logging.info("SALES: Downloading notes...")
-notes = amocrm_get_all_items("notes", headers)
-notes_df = pd.json_normalize(notes)
-
-# Pipelines
-logging.info("SALES: Downloading pipelines...")
-pipelines_resp = requests.get(f"{BASE_URL}/pipelines", headers=headers)
-pipelines_resp.raise_for_status()
-pipelines = pipelines_resp.json()["_embedded"]["pipelines"]
-pipelines_df = pd.json_normalize(pipelines)
-
-# --- STATUSES ---
-statuses = []
-for pipeline in pipelines:
-    for status in pipeline.get("statuses", []):
-        statuses.append({
-            "pipeline_id": pipeline["id"],
-            "status_id": status["id"],
-            "status_name": status["name"]
-        })
-statuses_df = pd.DataFrame(statuses)
-'''
