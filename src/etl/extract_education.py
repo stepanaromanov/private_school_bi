@@ -641,6 +641,8 @@ def eduschool_fetch_students(token):
             lambda locs: next((x["lng"] for x in locs if x.get("type") == "pickupLocation"), None)
         )
 
+        df.drop(columns=["locations"], inplace=True)
+
     # Flatten class (dict) - keep only '_id'
     if 'class' in df.columns:
         class_df = pd.json_normalize(df['class'], sep='__')[['_id']]
