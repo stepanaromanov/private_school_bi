@@ -631,15 +631,22 @@ def eduschool_fetch_students(token):
         df["home_location_lat"] = df["locations"].apply(
             lambda locs: next((x["lat"] for x in locs if x.get("type") == "homeLocation"), None)
         )
+        df["home_location_lat"] = df["home_location_lat"].round(5)
+
         df["home_location_lng"] = df["locations"].apply(
             lambda locs: next((x["lng"] for x in locs if x.get("type") == "homeLocation"), None)
         )
+        df["home_location_lng"] = df["home_location_lng"].round(5)
+
         df["pickup_location_lat"] = df["locations"].apply(
             lambda locs: next((x["lat"] for x in locs if x.get("type") == "pickupLocation"), None)
         )
+        df["pickup_location_lat"] = df["pickup_location_lat"].round(5)
+
         df["pickup_location_lng"] = df["locations"].apply(
             lambda locs: next((x["lng"] for x in locs if x.get("type") == "pickupLocation"), None)
         )
+        df["pickup_location_lng"] = df["pickup_location_lng"].round(5)
 
         df.drop(columns=["locations"], inplace=True)
 
