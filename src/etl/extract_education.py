@@ -626,6 +626,21 @@ def eduschool_fetch_students(token):
     # Create initial DataFrame for students
     df = pd.DataFrame(all_students)
 
+    if 'locations' in df.columns:
+        # Extract home and pickup locations
+        df["home_location_lat"] = df["locations"].apply(
+            lambda locs: next((x["lat"] for x in locs if x.get("type") == "homeLocation"), None)
+        )
+        df["home_location_lng"] = df["locations"].apply(
+            lambda locs: next((x["lng"] for x in locs if x.get("type") == "homeLocation"), None)
+        )
+        df["pickup_location_lat"] = df["locations"].apply(
+            lambda locs: next((x["lat"] for x in locs if x.get("type") == "pickupLocation"), None)
+        )
+        df["pickup_location_lng"] = df["locations"].apply(
+            lambda locs: next((x["lng"] for x in locs if x.get("type") == "pickupLocation"), None)
+        )
+
     # Flatten class (dict) - keep only '_id'
     if 'class' in df.columns:
         class_df = pd.json_normalize(df['class'], sep='__')[['_id']]

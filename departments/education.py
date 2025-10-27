@@ -35,7 +35,7 @@ if token:
     except Exception as e:
         logging.exception(f"❌Failed to fetch/load students or finance data: {e}")
         students, agg_finance = None, None
-
+"""
     # --- EMPLOYEES ---
     try:
         employees = eduschool_fetch_employees(token)
@@ -84,3 +84,4 @@ if token:
         logging.exception(f"❌Failed to fetch/load attendance or marks: {e}")
 
 logging.info("EDUCATION DEPARTMENT ETL run completed.")
+"""
