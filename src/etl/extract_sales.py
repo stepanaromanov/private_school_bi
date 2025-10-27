@@ -180,6 +180,57 @@ def amocrm_get_pipelines_statuses(headers):
     return pipelines_df, statuses_df
 
 
+def amocrm_get_tags_custom_fields(headers):
+    logging.info("SALES: Downloading tags and custom fields...")
+
+    tags_df = pd.DataFrame()
+    custom_fields_df = pd.DataFrame()
+
+    for entity in ["leads", "contacts", "companies"]:
+        for field in ["tags", "custom_fields"]:
+            response = requests.get(f"{BASE_URL}/{entity}/{field}", headers=headers)
+            response.raise_for_status()
+
+            data = response.json()["_embedded"][field]
+            df = pd.DataFrame(data)
+            df["entity"] = entity
+
+            if field == "tags":
+                tags_df = pd.concat([tags_df, df], ignore_index=True)
+            elif field == "custom_fields":
+                custom_fields_df = pd.concat([custom_fields_df, df], ignore_index=True)
+
+    tags_df.fillna(0, inplace=True)
+    tags_df = clean_string_columns(tags_df)
+    tags_df = normalize_columns(tags_df)
+    tags_df = add_timestamp(tags_df)
+    tags_df = tags_df.rename(columns={"id": "amocrm_id"})
+    # Add a new serial 'id' column starting from 1
+    tags_df.insert(0, "id", range(1, len(tags_df) + 1))
+
+    tags_dict = tags_df.set_index('id')['name'].astype(str).to_dict()
+    update_json_cache("tags", tags_dict, 'amocrm_cache')
+
+    tags_df.attrs["name"] = "sales_tags"
+    save_df_with_timestamp(df=tags_df)
+
+    custom_fields_df.fillna(0, inplace=True)
+    custom_fields_df = clean_string_columns(custom_fields_df)
+    custom_fields_df = normalize_columns(custom_fields_df)
+    custom_fields_df = add_timestamp(custom_fields_df)
+    custom_fields_df = custom_fields_df.rename(columns={"id": "amocrm_id"})
+    # Add a new serial 'id' column starting from 1
+    custom_fields_df.insert(0, "id", range(1, len(custom_fields_df) + 1))
+
+    custom_fields_dict = custom_fields_df.set_index('id')['name'].astype(str).to_dict()
+    update_json_cache("custom_fields", custom_fields_dict, 'amocrm_cache')
+
+    custom_fields_df.attrs["name"] = "sales_custom_fields"
+    save_df_with_timestamp(df=custom_fields_df)
+
+    return tags_df, custom_fields_df
+
+
 def amocrm_get_tasks(headers):
     logging.info("SALES: Downloading tasks...")
     tasks = amocrm_get_all_items("tasks", headers)

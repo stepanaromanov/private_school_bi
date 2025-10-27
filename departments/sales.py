@@ -86,6 +86,20 @@ if headers:
     except Exception as e:
         logging.exception(f"❌Failed to fetch/load tasks: {e}")
 
+    # --- TAGS & CUSTOM FIELDS ---
+    try:
+        tags_df, custom_fields_df = amocrm_get_tags_custom_fields(headers)
+
+        load_to_postgres(df=tags_df, dept="sales", table_base_name="tags", postfix="25", primary_key="id")
+        load_history_to_postgres(df=tags_df, dept="sales", table_base_name="tags", postfix="25", primary_key="id")
+
+        load_to_postgres(df=custom_fields_df, dept="sales", table_base_name="custom_fields", postfix="25", primary_key="id")
+        load_history_to_postgres(df=custom_fields_df, dept="sales", table_base_name="custom_fields", postfix="25", primary_key="id")
+
+        logging.info("Tags & custom fields successfully fetched and loaded.")
+    except Exception as e:
+        logging.exception(f"❌Failed to fetch/load tags & custom fields: {e}")
+
     # --- TASK TYPES ---
     try:
         task_types = amocrm_get_task_types(headers)

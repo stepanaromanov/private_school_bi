@@ -211,6 +211,8 @@ def eduschool_fetch_attendance_and_marks(token, classes_df, quarters_df, journal
     df_attendance_context.attrs["name"] = "education_attendance_context"
     df_attendances.attrs["name"] = "education_attendances"
 
+    df_attendance_context["homework"] = 'NA'
+
     # Save dfs to CSV
     save_df_with_timestamp(df=df_attendance_context)
     save_df_with_timestamp(df=df_attendances)
@@ -685,11 +687,15 @@ def eduschool_fetch_students(token):
     agg_df.attrs["name"] = "education_students_aggregated"
     df.attrs["name"] = "education_students"
 
+    df.drop(columns=["final_charge_date_by_subscription", "subscriptoin_stared_charging_at", "last_charged_at",
+                     "next_charge_date"], errors="ignore", inplace=True)
+
     # Save dfs to CSV
     save_df_with_timestamp(df=df)
     save_df_with_timestamp(df=agg_df)
 
     return df, agg_df
+
 
 
 
