@@ -4,6 +4,7 @@ import os
 import logging
 from configs import logging_config
 import requests
+import pandas as pd
 from amocrm.v2 import tokens
 from datetime import datetime, timedelta
 
@@ -43,6 +44,7 @@ def amocrm_initial_token(auth_code):
     # Optional: store initial access token
     creds["access_token"] = token_data["access_token"]
     creds["refresh_token"] = token_data["refresh_token"]
+    creds["timestamp"] = pd.Timestamp.now(tz="Asia/Tashkent").isoformat()
 
     with open("credentials/amocrm.json", "w") as f:
         json.dump(creds, f, indent=4)
@@ -84,6 +86,7 @@ def amocrm_refresh_token():
             # Optionally update local credentials.json
             creds["access_token"] = token_data["access_token"]
             creds["refresh_token"] = token_data["refresh_token"]
+            creds["timestamp"] = pd.Timestamp.now(tz="Asia/Tashkent").isoformat()
 
             with open("credentials/amocrm.json", "w") as f:
                 json.dump(creds, f, indent=4)
