@@ -5,6 +5,7 @@ import pandas as pd
 import logging
 import json
 
+
 with open("credentials/amocrm.json", "r") as f:
     creds = json.load(f)
 

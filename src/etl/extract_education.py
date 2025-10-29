@@ -4,6 +4,7 @@ import time
 import ast
 import requests
 import pandas as pd
+import numpy as np
 import logging
 from configs import logging_config
 import datetime
@@ -626,28 +627,45 @@ def eduschool_fetch_students(token):
     # Create initial DataFrame for students
     df = pd.DataFrame(all_students)
 
-    if 'locations' in df.columns:
-        # Extract home and pickup locations
-        df["home_location_lat"] = df["locations"].apply(
-            lambda locs: next((x["lat"] for x in locs if x.get("type") == "homeLocation"), None)
-        )
-        df["home_location_lat"] = df["home_location_lat"].round(5)
+    def extract_location(locs, loc_type, coord):
+        """
+        Extract a specific coordinate (lat/lng) from a list of location dictionaries.
 
-        df["home_location_lng"] = df["locations"].apply(
-            lambda locs: next((x["lng"] for x in locs if x.get("type") == "homeLocation"), None)
-        )
-        df["home_location_lng"] = df["home_location_lng"].round(5)
+        Args:
+            locs (list or None): List of location dicts with keys like 'type', 'lat', 'lng'.
+            loc_type (str): Location type to extract (e.g., 'homeLocation', 'pickupLocation').
+            coord (str): Coordinate key to extract ('lat' or 'lng').
 
-        df["pickup_location_lat"] = df["locations"].apply(
-            lambda locs: next((x["lat"] for x in locs if x.get("type") == "pickupLocation"), None)
-        )
-        df["pickup_location_lat"] = df["pickup_location_lat"].round(5)
+        Returns:
+            float or None: Rounded coordinate value or None if not found.
+        """
+        if not isinstance(locs, list):
+            return None
+        try:
+            val = next((x[coord] for x in locs if x.get("type") == loc_type and coord in x), None)
+            return round(val, 5) if val is not None else None
 
-        df["pickup_location_lng"] = df["locations"].apply(
-            lambda locs: next((x["lng"] for x in locs if x.get("type") == "pickupLocation"), None)
-        )
-        df["pickup_location_lng"] = df["pickup_location_lng"].round(5)
+        except Exception:
+            return None
 
+    # Always ensure these 4 columns exist
+    location_columns = [
+        "home_location_lat",
+        "home_location_lng",
+        "pickup_location_lat",
+        "pickup_location_lng"
+    ]
+
+    for col in location_columns:
+        df[col] = np.nan  # create columns with 0.0 float values by default
+
+    df["contract_end_date"] = pd.NaT
+
+    if "locations" in df.columns:
+        for loc_type in ["homeLocation", "pickupLocation"]:
+            for coord in ["lat", "lng"]:
+                col_name = f"{loc_type.replace('Location', '').lower()}_location_{coord}"
+                df[col_name] = df["locations"].apply(lambda locs: extract_location(locs, loc_type, coord))
         df.drop(columns=["locations"], inplace=True)
 
     # Flatten class (dict) - keep only '_id'
