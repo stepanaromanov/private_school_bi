@@ -95,6 +95,67 @@ def amocrm_get_leads(headers):
     leads = amocrm_get_all_items("leads", headers)
     leads_df = pd.DataFrame(leads)
 
+    wanted = [
+        "utmcontent",
+        "utmmedium",
+        "utmcampaign",
+        "utmsource",
+        "utmterm",
+        "utmreferrer",
+        "referrer",
+        "Kurslar",
+        "Filial"
+    ]
+
+    # build mapping for case-insensitive lookup but preserve original column names
+    lower_to_col = {f.lower(): f for f in wanted}
+
+    def extract_wanted(cf_list):
+        # initialize result with None for each wanted column
+        res = {col: 'UNKNOWN' for col in wanted}
+        if not cf_list:
+            return res
+        for field in cf_list:
+            name = field.get("field_name")
+            if not name:
+                continue
+            key = lower_to_col.get(name.lower())
+            if not key:
+                continue
+            # collect values — if multiple, join with ';'
+            vals = field.get("values") or []
+            # sometimes values may be plain strings; handle that defensively
+            extracted = []
+            for v in vals:
+                if isinstance(v, dict) and "value" in v:
+                    extracted.append("" if v["value"] is None else str(v["value"]))
+                else:
+                    extracted.append(str(v))
+            # set None if extracted is empty
+            res[key] = ";".join(extracted) if extracted else None
+        return res
+
+    # make dataframe and expand the extracted columns
+    custom_df = pd.DataFrame(leads)
+    expanded = custom_df["custom_fields_values"].apply(lambda x: pd.Series(extract_wanted(x)))
+    leads_df = pd.concat([leads_df.drop(columns=["custom_fields_values"]), expanded], axis=1)
+
+    # function to extract up to 5 tags
+    def extract_tags(embedded):
+        tags = embedded.get("tags")
+        # always return exactly 5 values (fill with None if fewer)
+        if not tags:
+            return ["UNKNOWN"] * 5
+        tag_names = [t.get("name") for t in tags[:5]]
+        return tag_names + ["UNKNOWN"] * (5 - len(tag_names))
+
+    # apply function and expand into separate columns
+    tag_cols = leads_df["_embedded"].apply(extract_tags).apply(pd.Series)
+    tag_cols.columns = [f"tag_{i + 1}" for i in range(5)]
+
+    # combine with original df
+    leads_df = pd.concat([leads_df.drop(columns=["_embedded"]), tag_cols], axis=1)
+
     leads_df.fillna(0, inplace=True)
     leads_df = clean_string_columns(leads_df)
     leads_df = normalize_columns(leads_df)
