@@ -628,6 +628,82 @@ def eduschool_fetch_students(token):
     # Create initial DataFrame for students
     df = pd.DataFrame(all_students)
 
+    # New Base URL
+    base_url_2 = 'https://backend.eduschool.uz/moderator-api/students/'
+
+    # List to hold extracted data
+    data_list = []
+
+    for student_id in df['_id']:
+        url = base_url_2 + student_id
+        response = requests.get(url, headers=headers)
+
+        if response.status_code == 200:
+            json_data = response.json()
+            if json_data['code'] == 0:
+                student_data = json_data['data']
+
+                lead_id = student_data['_id']
+                kommo_lead_id = student_data.get('kommoLeadId', None)
+
+                # Find pickup location
+                pickup_lat = None
+                pickup_lng = None
+                pickup_time = None
+                home_lat = None
+                home_lng = None
+
+                for loc in student_data.get('locations', []):
+                    if loc['type'] == 'pickupLocation':
+                        pickup_lat = loc['lat']
+                        pickup_lng = loc['lng']
+                        pickup_time = loc.get('pickupTime', '')  # Assuming it might be present
+                    elif loc['type'] == 'homeLocation':
+                        # Take the last homeLocation as in the example
+                        home_lat = loc['lat']
+                        home_lng = loc['lng']
+
+                # If multiple home locations, the above will take the last one
+
+                data_list.append({
+                    'id': lead_id,
+                    'amocrm_id': kommo_lead_id,
+                    'pickup_location_latitude': pickup_lat,
+                    'pickup_location_longitude': pickup_lng,
+                    'pickup_time': pickup_time,
+                    'home_location_latitude': home_lat,
+                    'home_location_longitude': home_lng
+                })
+
+    # Create DataFrame
+    locations_df = pd.DataFrame(data_list)
+
+    # Change pickup time format
+    locations_df["pickup_time"] = locations_df["pickup_time"].str[:5]
+    locations_df["pickup_time"] = pd.to_datetime(locations_df["pickup_time"], errors="coerce").dt.time
+    locations_df['pickup_time'] = locations_df['pickup_time'].fillna(datetime.time(0, 0))
+    locations_df.fillna(0, inplace=True)
+
+    locations_df[
+        [
+            'pickup_location_latitude',
+            'pickup_location_longitude',
+            'home_location_latitude',
+            'home_location_longitude'
+        ]
+    ] = locations_df[
+        [
+            'pickup_location_latitude',
+            'pickup_location_longitude',
+            'home_location_latitude',
+            'home_location_longitude'
+        ]
+    ].apply(lambda s: pd.to_numeric(s, errors='coerce').round(5))
+
+    '''
+    
+    Outdated!!!
+    
     def extract_location(locs, loc_type, coord):
         """
         Extract a specific coordinate (lat/lng) from a list of location dictionaries.
@@ -666,6 +742,8 @@ def eduschool_fetch_students(token):
                 col_name = f"{loc_type.replace('Location', '').lower()}_location_{coord}"
                 df[col_name] = df["locations"].apply(lambda locs: extract_location(locs, loc_type, coord))
         df.drop(columns=["locations"], inplace=True)
+    
+    '''
 
     # Flatten class (dict) - keep only '_id'
     if 'class' in df.columns:
@@ -720,6 +798,10 @@ def eduschool_fetch_students(token):
     df.fillna(0, inplace=True)
     df = clean_string_columns(df)
     df = normalize_columns(df)
+
+    # Merge with main pandas dataframe
+    df = pd.merge(df, locations_df, on='id', how='left')
+
     df = add_timestamp(df)
     agg_df = normalize_columns(agg_df)
     agg_df = add_timestamp(agg_df)

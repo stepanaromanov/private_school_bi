@@ -149,10 +149,12 @@ expected_columns_dict = {
         "birthday_timestamp",
         "contract_date_timestamp",
         "contract_end_date_timestamp",
-        "home_location_lat",
-        "home_location_lng",
-        "pickup_location_lat",
-        "pickup_location_lng"
+        "home_location_latitude",
+        "home_location_longitude",
+        "pickup_location_latitude",
+        "pickup_location_longitude",
+        "pickup_time",
+        "amocrm_id",
     },
     "education_agg_finance": {
         "total_balance",

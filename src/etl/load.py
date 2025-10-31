@@ -173,6 +173,8 @@ def load_history_to_postgres(
             return 'DOUBLE PRECISION'
         elif pd.api.types.is_datetime64_any_dtype(dtype) or 'timestamp' in col_name.lower():
             return 'TIMESTAMP'
+        elif 'pickup_time' in col_name.lower():
+            return 'TIME'
         else:
             return 'TEXT'
 
