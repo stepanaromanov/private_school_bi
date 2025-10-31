@@ -146,15 +146,26 @@ def log_df(df: pd.DataFrame):
         if df_name in expected_columns_dict:
             expected_cols = expected_columns_dict[df_name]
             actual_cols = set(df.columns)
-            if actual_cols != expected_cols:
-                missing = expected_cols - actual_cols
-                extra = actual_cols - expected_cols
+
+            missing = expected_cols - actual_cols
+            extra = actual_cols - expected_cols
+
+            if missing or extra:
                 error_msg = f"❌🏛️ COLUMNS MISMATCH FOR {df_name}: "
                 if missing:
                     error_msg += f"MISSING: {missing}. "
                 if extra:
-                    error_msg += f"EXTRA: {extra}."
+                    error_msg += f"EXTRA: {extra}. "
                 logging.error(error_msg)
+
+                # KEEP ONLY EXPECTED COLUMNS
+                # Create missing columns as NaN to avoid KeyError
+                for col in missing:
+                    df[col] = None
+
+                df = df[list(expected_cols)]
+                logging.info("✅ Cleaned DataFrame to expected columns only.")
+
             else:
                 logging.info("✅🏛️ EXPECTED COLUMNS MATCH.")
 
