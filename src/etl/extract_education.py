@@ -213,6 +213,7 @@ def eduschool_fetch_attendance_and_marks(token, classes_df, quarters_df, journal
     df_attendances.attrs["name"] = "education_attendances"
 
     df_attendance_context["homework"] = 'NA'
+    df_attendance_context.drop(columns=["homework_answers"], inplace=True)
 
     # Save dfs to CSV
     save_df_with_timestamp(df=df_attendance_context)
@@ -658,8 +659,6 @@ def eduschool_fetch_students(token):
 
     for col in location_columns:
         df[col] = np.nan  # create columns with 0.0 float values by default
-
-    df["contract_end_date"] = pd.NaT
 
     if "locations" in df.columns:
         for loc_type in ["homeLocation", "pickupLocation"]:

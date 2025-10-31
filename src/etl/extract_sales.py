@@ -140,18 +140,18 @@ def amocrm_get_leads(headers):
     expanded = custom_df["custom_fields_values"].apply(lambda x: pd.Series(extract_wanted(x)))
     leads_df = pd.concat([leads_df.drop(columns=["custom_fields_values"]), expanded], axis=1)
 
-    # function to extract up to 5 tags
+    # function to extract up to 10 tags
     def extract_tags(embedded):
         tags = embedded.get("tags")
         # always return exactly 5 values (fill with None if fewer)
         if not tags:
-            return ["UNKNOWN"] * 5
-        tag_names = [t.get("name") for t in tags[:5]]
-        return tag_names + ["UNKNOWN"] * (5 - len(tag_names))
+            return ["UNKNOWN"] * 10
+        tag_names = [t.get("name") for t in tags[:10]]
+        return tag_names + ["UNKNOWN"] * (10 - len(tag_names))
 
     # apply function and expand into separate columns
     tag_cols = leads_df["_embedded"].apply(extract_tags).apply(pd.Series)
-    tag_cols.columns = [f"tag_{i + 1}" for i in range(5)]
+    tag_cols.columns = [f"tag_{i + 1}" for i in range(10)]
 
     # combine with original df
     leads_df = pd.concat([leads_df.drop(columns=["_embedded"]), tag_cols], axis=1)

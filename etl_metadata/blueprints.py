@@ -276,6 +276,11 @@ expected_columns_dict = {
         'tag_3',
         'tag_4',
         'tag_5',
+        'tag_6',
+        'tag_7',
+        'tag_8',
+        'tag_9',
+        'tag_10',
     },
     "sales_loss_reasons": {
         "id",
