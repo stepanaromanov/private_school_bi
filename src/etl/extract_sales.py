@@ -143,7 +143,7 @@ def amocrm_get_leads(headers):
     # function to extract up to 10 tags
     def extract_tags(embedded):
         tags = embedded.get("tags")
-        # always return exactly 5 values (fill with None if fewer)
+        # always return exactly 10 values (fill with None if fewer)
         if not tags:
             return ["UNKNOWN"] * 10
         tag_names = [t.get("name") for t in tags[:10]]
