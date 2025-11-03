@@ -212,8 +212,7 @@ def eduschool_fetch_attendance_and_marks(token, classes_df, quarters_df, journal
     df_attendance_context.attrs["name"] = "education_attendance_context"
     df_attendances.attrs["name"] = "education_attendances"
 
-    df_attendance_context["homework"] = 'NA'
-    df_attendance_context.drop(columns=["homework_answers"], inplace=True)
+    df_attendance_context.drop(columns=["homework_answers"], errors="ignore", inplace=True)
 
     # Save dfs to CSV
     save_df_with_timestamp(df=df_attendance_context)
