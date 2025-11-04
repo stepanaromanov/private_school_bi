@@ -2,7 +2,6 @@ from src.etl.connect import eduschool_token
 from src.etl.extract_education import *
 from src.etl.load import *
 import logging
-from configs import logging_config
 import datetime
 
 logging.info("EDUCATION DEPARTMENT ETL has started.")

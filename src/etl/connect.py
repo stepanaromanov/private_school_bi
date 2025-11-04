@@ -182,3 +182,30 @@ def eduschool_token():
         logging.info("Eduschool. New token stored.")
 
     return token
+
+def eduschool_headers(token, year="6841869b8eb7901bc71c7807", branch="68417f7edbbdfc73ada6ef01"):
+
+    headers = {
+            "academicyearid": f"{year}",
+            "accept": "application/json, text/plain, */*",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "en-US,en;q=0.9",
+            "authorization": f"Bearer {token}",
+            "branch": f"{branch}",
+            "connection": "keep-alive",
+            "host": "backend.eduschool.uz",
+            "language": "uz",
+            "organization": "test",
+            "origin": "https://omonschool.eduschool.uz",
+            "referer": "https://omonschool.eduschool.uz/",
+            "sec-ch-ua": "\"Chromium\";v=\"142\", \"Google Chrome\";v=\"142\", \"Not_A Brand\";v=\"99\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"macOS\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-site",
+            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
+    }
+
+    return headers
+

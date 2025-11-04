@@ -1,12 +1,12 @@
 from src.utils.utils_dataframe import *
 from src.utils.utils_general import *
+from src.etl.connect import *
 import time
 import ast
 import requests
 import pandas as pd
 import numpy as np
 import logging
-from configs import logging_config
 import datetime
 
 
@@ -37,28 +37,7 @@ def eduschool_fetch_attendance_and_marks(token, classes_df, quarters_df, journal
 
     quarter_ids = active_quarter["id"].tolist()
 
-    # Headers from the example
-    headers = {
-        'accept': 'application/json, text/plain, */*',
-        'accept-encoding': 'gzip, deflate, br, zstd',
-        'accept-language': 'en-US,en;q=0.9',
-        'authorization': f'Bearer {token}',
-        'branch': '68417f7edbbdfc73ada6ef01',
-        'connection': 'keep-alive',
-        'host': 'backend.eduschool.uz',
-        'language': 'en',
-        'organization': 'test',
-        'origin': 'https://omonschool.eduschool.uz',
-        'referer': 'https://omonschool.eduschool.uz/',
-        'sec-ch-ua': '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
-        'sec-ch-ua-mobile': '?0',
-        'sec-ch-ua-platform': '"macOS"',
-        'sec-fetch-dest': 'empty',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-site': 'same-site',
-        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
-        'academicyearid': '6841869b8eb7901bc71c7807'
-    }
+    headers = eduschool_headers(token)
 
     # Function to fetch attendance for a class_id, subject_id (journal_id), quarter_id
     def fetch_attendance(quarter_id, class_id, subject_id, timeout_sec=30):
@@ -212,8 +191,6 @@ def eduschool_fetch_attendance_and_marks(token, classes_df, quarters_df, journal
     df_attendance_context.attrs["name"] = "education_attendance_context"
     df_attendances.attrs["name"] = "education_attendances"
 
-    df_attendance_context.drop(columns=["homework_answers"], errors="ignore", inplace=True)
-
     # Save dfs to CSV
     save_df_with_timestamp(df=df_attendance_context)
     save_df_with_timestamp(df=df_attendances)
@@ -229,27 +206,7 @@ def eduschool_fetch_classes(token):
         'headTeachersIds': '[]',
         'search': ''
     }
-    headers = {
-        'accept': 'application/json, text/plain, */*',
-        'accept-encoding': 'gzip, deflate, br, zstd',
-        'accept-language': 'en-US,en;q=0.9',
-        'authorization': f'Bearer {token}',
-        'branch': '68417f7edbbdfc73ada6ef01',
-        'connection': 'keep-alive',
-        'host': 'backend.eduschool.uz',
-        'language': 'en',
-        'organization': 'test',
-        'origin': 'https://omonschool.eduschool.uz',
-        'referer': 'https://omonschool.eduschool.uz/',
-        'sec-ch-ua': '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
-        'sec-ch-ua-mobile': '?0',
-        'sec-ch-ua-platform': '"macOS"',
-        'sec-fetch-dest': 'empty',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-site': 'same-site',
-        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
-        'academicyearid': '6841869b8eb7901bc71c7807'
-    }
+    headers = eduschool_headers(token)
 
     # Function to fetch all pages with pagination
     def fetch_all_classes():
@@ -331,27 +288,7 @@ def eduschool_fetch_employees(token):
     params = {
         'limit': 200,  # As per the example; can adjust if needed
     }
-    headers = {
-        'accept': 'application/json, text/plain, */*',
-        'accept-encoding': 'identity',
-        'accept-language': 'en-US,en;q=0.9',
-        'authorization': f'Bearer {token}',
-        'branch': '68417f7edbbdfc73ada6ef01',
-        'connection': 'keep-alive',
-        'host': 'backend.eduschool.uz',
-        'language': 'en',
-        'organization': 'test',
-        'origin': 'https://omonschool.eduschool.uz',
-        'referer': 'https://omonschool.eduschool.uz/',
-        'sec-ch-ua': '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
-        'sec-ch-ua-mobile': '?0',
-        'sec-ch-ua-platform': '"macOS"',
-        'sec-fetch-dest': 'empty',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-site': 'same-site',
-        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
-        'academicyearid': '6841869b8eb7901bc71c7807'
-    }
+    headers = eduschool_headers(token)
 
     # Function to fetch all pages with pagination
     def fetch_all_employees():
@@ -414,28 +351,7 @@ def eduschool_fetch_employees(token):
 def eduschool_fetch_journals(token , classes_df):
     class_ids = classes_df["id"].tolist()
 
-    # Headers from the example
-    headers = {
-        'accept': 'application/json, text/plain, */*',
-        'accept-encoding': 'gzip, deflate, br, zstd',
-        'accept-language': 'en-US,en;q=0.9',
-        'authorization': f'Bearer {token}',
-        'branch': '68417f7edbbdfc73ada6ef01',
-        'connection': 'keep-alive',
-        'host': 'backend.eduschool.uz',
-        'language': 'en',
-        'organization': 'test',
-        'origin': 'https://omonschool.eduschool.uz',
-        'referer': 'https://omonschool.eduschool.uz/',
-        'sec-ch-ua': '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
-        'sec-ch-ua-mobile': '?0',
-        'sec-ch-ua-platform': '"macOS"',
-        'sec-fetch-dest': 'empty',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-site': 'same-site',
-        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
-        'academicyearid': '6841869b8eb7901bc71c7807'
-    }
+    headers = eduschool_headers(token)
 
     # Function to fetch journal for a single class ID (no pagination, single request)
     def fetch_journal_for_class(class_id):
@@ -517,27 +433,7 @@ def eduschool_fetch_quarters(token):
         'search': '',
         'limit': 200,  # As per the example; sufficient for small totals
     }
-    headers = {
-        'accept': 'application/json, text/plain, */*',
-        'accept-encoding': 'gzip, deflate, br, zstd',
-        'accept-language': 'en-US,en;q=0.9',
-        'authorization': f'Bearer {token}',
-        'branch': '68417f7edbbdfc73ada6ef01',
-        'connection': 'keep-alive',
-        'host': 'backend.eduschool.uz',
-        'language': 'en',
-        'organization': 'test',
-        'origin': 'https://omonschool.eduschool.uz',
-        'referer': 'https://omonschool.eduschool.uz/',
-        'sec-ch-ua': '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
-        'sec-ch-ua-mobile': '?0',
-        'sec-ch-ua-platform': '"macOS"',
-        'sec-fetch-dest': 'empty',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-site': 'same-site',
-        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
-        'academicyearid': '6841869b8eb7901bc71c7807'
-    }
+    headers = eduschool_headers(token)
 
     # fetch all quarters
     params['page'] = 1
@@ -572,27 +468,7 @@ def eduschool_fetch_students(token):
         'grade': '[]',
         'search': ''
     }
-    headers = {
-        'accept': 'application/json, text/plain, */*',
-        'accept-encoding': 'gzip, deflate, br, zstd',
-        'accept-language': 'en-US,en;q=0.9',
-        'authorization': f'Bearer {token}',
-        'branch': '68417f7edbbdfc73ada6ef01',
-        'connection': 'keep-alive',
-        'host': 'backend.eduschool.uz',
-        'language': 'en',
-        'organization': 'test',
-        'origin': 'https://omonschool.eduschool.uz',
-        'referer': 'https://omonschool.eduschool.uz/',
-        'sec-ch-ua': '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
-        'sec-ch-ua-mobile': '?0',
-        'sec-ch-ua-platform': '"macOS"',
-        'sec-fetch-dest': 'empty',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-site': 'same-site',
-        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
-        'academicyearid': '6841869b8eb7901bc71c7807'
-    }
+    headers = eduschool_headers(token)
 
     all_students = []
     aggregates = {}  # To store totalBalance, totalDebted, totalOwned (from first response)

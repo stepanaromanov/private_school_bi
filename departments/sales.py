@@ -2,7 +2,6 @@ from src.etl.connect import *
 from src.etl.extract_sales import *
 from src.etl.load import *
 import logging
-from configs import logging_config
 import datetime
 
 logging.info("SALES DEPARTMENT ETL has started.")
