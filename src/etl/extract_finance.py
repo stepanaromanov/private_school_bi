@@ -13,7 +13,7 @@ import pandas as pd
 
 
 # Function to fetch all transactions by paginating the API
-def finance_fetch_all_transactions(token, year="6841869b8eb7901bc71c7807", branch="68417f7edbbdfc73ada6ef01"):
+def finance_fetch_all_transactions(token):
     url = "https://backend.eduschool.uz/moderator-api/cashbox/transaction/pagin"
     headers = eduschool_headers(token)
 
