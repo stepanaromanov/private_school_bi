@@ -12,15 +12,15 @@ import pandas as pd
 
 
 # Function to fetch all transactions by paginating the API
-def fetch_all_transactions(token):
+def finance_fetch_all_transactions(token, year="6841869b8eb7901bc71c7807", branch="68417f7edbbdfc73ada6ef01"):
     url = "https://backend.eduschool.uz/moderator-api/cashbox/transaction/pagin"
     headers = {
-        "academicyearid": "6841869b8eb7901bc71c7807",
+        "academicyearid": f"{year}",
         "accept": "application/json, text/plain, */*",
         "accept-encoding": "gzip, deflate, br, zstd",
         "accept-language": "en-US,en;q=0.9",
         "authorization": f"Bearer {token}",
-        "branch": "68417f7edbbdfc73ada6ef01",
+        "branch": f"{branch}",
         "connection": "keep-alive",
         "host": "backend.eduschool.uz",
         "language": "uz",
@@ -68,5 +68,16 @@ def fetch_all_transactions(token):
 
     # Create a flattened pandas DataFrame by exploding/flattening nested structures
     transactions_df = pd.json_normalize(transactions, sep="_")
+
+    # Clean and enrich dfs
+    transactions_df.fillna(0, inplace=True)
+    transactions_df = clean_string_columns(transactions_df)
+    transactions_df = normalize_columns(transactions_df)
+    transactions_df = add_timestamp(transactions_df)
+
+    transactions_df.attrs["name"] = "finance_transactions"
+
+    # Save df to CSV
+    save_df_with_timestamp(df=transactions_df)
 
     return transactions_df
