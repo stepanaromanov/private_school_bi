@@ -42,7 +42,7 @@ def add_timestamp(df: pd.DataFrame, col: str = "fetched_timestamp") -> pd.DataFr
         'date', 'created_at', 'starts_at', 'ends_at',
         'updated_at', 'birthday', 'contract_date',
         'lesson_date', 'attendance_date', 'contract_end_date',
-        'closed_at', 'closest_task_at', 'complete_till'
+        'closed_at', 'closest_task_at', 'complete_till', 'actual_date'
     ]
 
     # 3. Convert date columns to Postgres TIMESTAMP format

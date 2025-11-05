@@ -56,6 +56,8 @@ def finance_fetch_all_transactions(token):
     transactions_df = normalize_columns(transactions_df)
     transactions_df = add_timestamp(transactions_df)
 
+    transactions_df.rename(columns={"type": "transaction_type"}, inplace=True)
+
     transactions_df.attrs["name"] = "finance_transactions"
 
     # Save df to CSV

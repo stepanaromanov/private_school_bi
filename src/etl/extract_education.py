@@ -295,7 +295,7 @@ def eduschool_fetch_employees(token):
     def fetch_all_employees():
         response = requests.get(base_url, params=params, headers=headers)
         response.raise_for_status()  # Raise error if not 200
-        data = response.json()
+        data = json.loads(brotli.decompress(response.content).decode())
 
         # Check success instead of code, per preview format
         if not data.get('success', False):

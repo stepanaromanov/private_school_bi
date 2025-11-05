@@ -170,7 +170,7 @@ expected_columns_dict = {
         "session_id",
         "number",
         "origin",
-        "type",
+        "transaction_type",
         "balance_id",
         "branch_id",
         "cashbox_id",
