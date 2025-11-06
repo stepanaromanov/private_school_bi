@@ -14,13 +14,22 @@ except Exception as e:
     token = None
 
 if token:
-    # --- TRANSACTIONS ---
+    # --- TRANSACTIONS URGANCH OMON SCHOOL ---
     try:
         transactions = finance_fetch_all_transactions(token)
         load_to_postgres(df=transactions, dept="finance", table_base_name="transactions", postfix="_2526", primary_key="id")
         logging.info("Transactions successfully fetched and loaded.")
     except Exception as e:
-        logging.exception(f"❌Failed to fetch/load transactions: {e}")
+        logging.exception(f"❌Failed to fetch/load Urganch school transactions: {e}")
+        classes = None
+
+    # --- TRANSACTIONS GURLAN OMON SCHOOL ---
+    try:
+        transactions = finance_fetch_all_transactions(token, branch="684d1fc04921a1211f725ec4")
+        load_to_postgres(df=transactions, dept="finance", table_base_name="transactions", postfix="_2526", primary_key="id")
+        logging.info("Transactions successfully fetched and loaded.")
+    except Exception as e:
+        logging.exception(f"❌Failed to fetch/load Gurlan school transactions: {e}")
         classes = None
 
 logging.info("FINANCE DEPARTMENT ETL run completed.")

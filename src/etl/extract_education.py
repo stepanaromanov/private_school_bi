@@ -10,7 +10,7 @@ import logging
 import datetime
 
 
-def eduschool_fetch_attendance_and_marks(token, classes_df, quarters_df, journals_df):
+def eduschool_fetch_attendance_and_marks(token, classes_df, quarters_df, journals_df, year="6841869b8eb7901bc71c7807", branch="68417f7edbbdfc73ada6ef01"):
     class_to_journals = {class_id: group['journal_id'].tolist() for class_id, group in journals_df.groupby('class_id')}
     class_ids = classes_df["id"].tolist()
 
@@ -37,7 +37,7 @@ def eduschool_fetch_attendance_and_marks(token, classes_df, quarters_df, journal
 
     quarter_ids = active_quarter["id"].tolist()
 
-    headers = eduschool_headers(token)
+    headers = eduschool_headers(token, branch=branch, year=year)
 
     # Function to fetch attendance for a class_id, subject_id (journal_id), quarter_id
     def fetch_attendance(quarter_id, class_id, subject_id, timeout_sec=30):
@@ -188,6 +188,13 @@ def eduschool_fetch_attendance_and_marks(token, classes_df, quarters_df, journal
     df_attendances = normalize_columns(df_attendances)
     df_attendances = add_timestamp(df_attendances)
 
+    with open("eduschool_cache/branches.json", "r") as f:
+        filials  = json.load(f)
+
+    df_attendance_context['filial'] = filials[branch]
+    df_attendances['filial'] = filials[branch]
+
+
     df_attendance_context.attrs["name"] = "education_attendance_context"
     df_attendances.attrs["name"] = "education_attendances"
     df_attendances.drop('homework_answers', axis=1, inplace=True, errors='ignore')
@@ -199,7 +206,7 @@ def eduschool_fetch_attendance_and_marks(token, classes_df, quarters_df, journal
     return df_attendance_context, df_attendances
 
 
-def eduschool_fetch_classes(token):
+def eduschool_fetch_classes(token, year="6841869b8eb7901bc71c7807", branch="68417f7edbbdfc73ada6ef01"):
     # API endpoint and base params
     base_url = 'https://backend.eduschool.uz/moderator-api/class/pagin'
     params = {
@@ -207,7 +214,8 @@ def eduschool_fetch_classes(token):
         'headTeachersIds': '[]',
         'search': ''
     }
-    headers = eduschool_headers(token)
+
+    headers = eduschool_headers(token, branch=branch, year=year)
 
     # Function to fetch all pages with pagination
     def fetch_all_classes():
@@ -266,6 +274,11 @@ def eduschool_fetch_classes(token):
             [df.drop('headTeacher', axis=1), headTeacher_df.add_prefix('headTeacher_')],
             axis=1
         )
+    with open("eduschool_cache/branches.json", "r") as f:
+        filials  = json.load(f)
+
+    df['filial'] = filials[branch]
+
     df = clean_string_columns(df)
     df = normalize_columns(df)
     df = add_timestamp(df)
@@ -283,13 +296,13 @@ def eduschool_fetch_classes(token):
     return df
 
 
-def eduschool_fetch_employees(token):
+def eduschool_fetch_employees(token, year="6841869b8eb7901bc71c7807", branch="68417f7edbbdfc73ada6ef01"):
     # API endpoint and base params
     base_url = 'https://backend.eduschool.uz/moderator-api/employees/pagin'
     params = {
         'limit': 200,  # As per the example; can adjust if needed
     }
-    headers = eduschool_headers(token)
+    headers = eduschool_headers(token, branch=branch, year=year)
 
     # Function to fetch all pages with pagination
     def fetch_all_employees():
@@ -341,6 +354,11 @@ def eduschool_fetch_employees(token):
     df = normalize_columns(df)
     df = add_timestamp(df)
 
+    with open("eduschool_cache/branches.json", "r") as f:
+        filials  = json.load(f)
+
+    df['filial'] = filials[branch]
+
     df.attrs["name"] = "education_employees"
 
     # Save df to CSV
@@ -349,10 +367,10 @@ def eduschool_fetch_employees(token):
     return df
 
 
-def eduschool_fetch_journals(token , classes_df):
+def eduschool_fetch_journals(token , classes_df, year="6841869b8eb7901bc71c7807", branch="68417f7edbbdfc73ada6ef01"):
     class_ids = classes_df["id"].tolist()
 
-    headers = eduschool_headers(token)
+    headers = eduschool_headers(token, branch=branch, year=year)
 
     # Function to fetch journal for a single class ID (no pagination, single request)
     def fetch_journal_for_class(class_id):
@@ -420,6 +438,11 @@ def eduschool_fetch_journals(token , classes_df):
     df_final = normalize_columns(df_final)
     df_final = add_timestamp(df_final)
 
+    with open("eduschool_cache/branches.json", "r") as f:
+        filials  = json.load(f)
+
+    df_final['filial'] = filials[branch]
+
     # Save df to CSV
     df_final.attrs["name"]="education_journals"
     save_df_with_timestamp(df=df_final)
@@ -427,14 +450,14 @@ def eduschool_fetch_journals(token , classes_df):
     return df_final
 
 
-def eduschool_fetch_quarters(token):
+def eduschool_fetch_quarters(token, year="6841869b8eb7901bc71c7807", branch="68417f7edbbdfc73ada6ef01"):
     # API endpoint and base params
     base_url = 'https://backend.eduschool.uz/moderator-api/quarter'
     params = {
         'search': '',
         'limit': 200,  # As per the example; sufficient for small totals
     }
-    headers = eduschool_headers(token)
+    headers = eduschool_headers(token, branch=branch, year=year)
 
     # fetch all quarters
     params['page'] = 1
@@ -454,6 +477,11 @@ def eduschool_fetch_quarters(token):
     df = normalize_columns(df)
     df = add_timestamp(df)
 
+    with open("eduschool_cache/branches.json", "r") as f:
+        filials  = json.load(f)
+
+    df['filial'] = filials[branch]
+
     df.attrs["name"] = "education_quarters"
     # Save dfs to CSV
     save_df_with_timestamp(df=df)
@@ -461,7 +489,7 @@ def eduschool_fetch_quarters(token):
     return df
 
 
-def eduschool_fetch_students(token):
+def eduschool_fetch_students(token, year="6841869b8eb7901bc71c7807", branch="68417f7edbbdfc73ada6ef01"):
     # API endpoint and base params (no filters for full list)
     base_url = 'https://backend.eduschool.uz/moderator-api/students/pagin'
     params = {
@@ -469,7 +497,7 @@ def eduschool_fetch_students(token):
         'grade': '[]',
         'search': ''
     }
-    headers = eduschool_headers(token)
+    headers = eduschool_headers(token, branch=branch, year=year)
 
     all_students = []
     aggregates = {}  # To store totalBalance, totalDebted, totalOwned (from first response)
@@ -682,6 +710,13 @@ def eduschool_fetch_students(token):
     agg_df = normalize_columns(agg_df)
     agg_df = add_timestamp(agg_df)
     agg_df['id'] = 1
+
+    with open("eduschool_cache/branches.json", "r") as f:
+        filials  = json.load(f)
+
+    agg_df['filial'] = filials[branch]
+    df['filial'] = filials[branch]
+
 
     agg_df.attrs["name"] = "education_students_aggregated"
     df.attrs["name"] = "education_students"

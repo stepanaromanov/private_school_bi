@@ -19,6 +19,7 @@ expected_columns_dict = {
         "period__8",
         "fetched_timestamp",
         "date_timestamp",
+        "filial",
     },
     "education_attendances": {
         "id",
@@ -40,6 +41,7 @@ expected_columns_dict = {
         "fetched_timestamp",
         "lesson_date_timestamp",
         "attendance_date_timestamp",
+        "filial",
     },
     "education_classes": {
         "id",
@@ -57,6 +59,7 @@ expected_columns_dict = {
         "head_teacher_last_name",
         "head_teacher_phone_number",
         "fetched_timestamp",
+        "filial",
     },
     "education_employees": {
         "id",
@@ -87,6 +90,7 @@ expected_columns_dict = {
         "fetched_timestamp",
         "created_at_timestamp",
         "updated_at_timestamp",
+        "filial",
     },
     "education_journals": {
         "class_id",
@@ -100,6 +104,7 @@ expected_columns_dict = {
         "teacher_4_id",
         "teacher_5_id",
         "fetched_timestamp",
+        "filial",
     },
     "education_quarters": {
         "id",
@@ -111,6 +116,7 @@ expected_columns_dict = {
         "starts_at_timestamp",
         "ends_at_timestamp",
         "updated_at_timestamp",
+        "filial",
     },
     "education_students": {
         "id",
@@ -155,6 +161,7 @@ expected_columns_dict = {
         "pickup_location_longitude",
         "pickup_time",
         "amocrm_id",
+        "filial",
     },
     "education_agg_finance": {
         "total_balance",
@@ -162,6 +169,7 @@ expected_columns_dict = {
         "total_owned",
         "fetched_timestamp",
         "id",
+        "filial",
     },
     "finance_transactions": {
         "id",
@@ -220,6 +228,7 @@ expected_columns_dict = {
         "fetched_timestamp",
         "created_at_timestamp",
         "updated_at_timestamp",
+        "filial"
     },
     "sales_catalogs": {
         "id",

@@ -184,7 +184,7 @@ def eduschool_token():
 
     return token
 
-def eduschool_headers(token, year="6841869b8eb7901bc71c7807", branch="68417f7edbbdfc73ada6ef01"):
+def eduschool_headers(token, year, branch):
 
     headers = {
             "academicyearid": f"{year}",
