@@ -183,7 +183,7 @@ expected_columns_dict = {
         "cashier_id",
         "before_amount",
         "after_amount",
-        "actual_date",
+        "actual_date_timestamp",
         "transaction_type_name",
         "transaction_type_type",
         "transaction_type_has_impact_on",
