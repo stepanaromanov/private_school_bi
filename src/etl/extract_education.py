@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 import logging
 import datetime
+import secrets
 
 
 def eduschool_fetch_attendance_and_marks(token, classes_df, quarters_df, journals_df, year="6841869b8eb7901bc71c7807", branch="68417f7edbbdfc73ada6ef01"):
@@ -709,7 +710,7 @@ def eduschool_fetch_students(token, year="6841869b8eb7901bc71c7807", branch="684
     df = add_timestamp(df)
     agg_df = normalize_columns(agg_df)
     agg_df = add_timestamp(agg_df)
-    agg_df['id'] = 1
+    agg_df['id'] = secrets.token_hex(12)
 
     with open("eduschool_cache/branches.json", "r") as f:
         filials  = json.load(f)

@@ -350,6 +350,8 @@ expected_columns_dict = {
         'tag_8',
         'tag_9',
         'tag_10',
+        'marketing_manba',
+        'sifatsiz_lid',
     },
     "sales_loss_reasons": {
         "id",

@@ -104,7 +104,9 @@ def amocrm_get_leads(headers):
         "utmreferrer",
         "referrer",
         "Kurslar",
-        "Filial"
+        "Filial",
+        "Marketing manba",
+        "Sifatsiz lid"
     ]
 
     # build mapping for case-insensitive lookup but preserve original column names
