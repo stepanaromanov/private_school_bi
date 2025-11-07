@@ -56,6 +56,11 @@ def finance_fetch_all_transactions(token, year="6841869b8eb7901bc71c7807", branc
     transactions_df = normalize_columns(transactions_df)
     transactions_df = add_timestamp(transactions_df)
 
+    with open("eduschool_cache/branches.json", "r") as f:
+        filials  = json.load(f)
+
+    transactions_df['filial'] = filials[branch]
+
     transactions_df.rename(columns={"type": "transaction_type"}, inplace=True)
 
     transactions_df.attrs["name"] = "finance_transactions"

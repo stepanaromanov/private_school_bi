@@ -1,4 +1,5 @@
 from src.utils.utils_general import setup_logging
+import logging
 from configs import logging_config
 from departments import ceo
 from departments import education
