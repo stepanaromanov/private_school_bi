@@ -4,12 +4,12 @@ import configs.logging_config
 from pathlib import Path
 from datetime import datetime, timedelta
 
-
+"""
 def setup_logging():
-    """
-    Create one shared logger and configure it for the entire project.
-    All imports can use logging.getLogger('omonschool_etl') to get the same instance.
-    """
+    
+    # Create one shared logger and configure it for the entire project.
+    # All imports can use logging.getLogger('omonschool_etl') to get the same instance.
+    
     log_folder = Path("logs")
     log_folder.mkdir(parents=True, exist_ok=True)
 
@@ -42,4 +42,4 @@ def setup_logging():
 
 
 __all__ = ["setup_logging"]
-
+"""
