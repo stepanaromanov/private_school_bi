@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from etl_metadata.blueprints import expected_columns_dict
 import pandas as pd
 
+dataframe_log = logging_config.get_logger(name="dataframe_log", level=logging.DEBUG)
 
 def add_timestamp(df: pd.DataFrame, col: str = "fetched_timestamp") -> pd.DataFrame:
     """
@@ -140,7 +141,7 @@ def fill_and_numeric(series, fill_value=0, dtype="float"):
 
 def log_df(df: pd.DataFrame):
     df_name = df.attrs.get("name") or "unidentified"
-    logging.info(f"{'=' * 50}\n\nStarting analysis for DataFrame: {df_name}\n\n{'=' * 50}")
+    dataframe_log.info(f"{'=' * 50}\n\nStarting analysis for DataFrame: {df_name}\n\n{'=' * 50}")
     try:
         # Check expected columns if provided
         if df_name in expected_columns_dict:
@@ -170,59 +171,59 @@ def log_df(df: pd.DataFrame):
                 logging.info("✅🏛️ EXPECTED COLUMNS MATCH.")
 
         # 1. Shape Check
-        logging.info(f"1. Shape: {df.shape}")
+        dataframe_log.info(f"1. Shape: {df.shape}")
 
         # Columns List
-        # logging.info(f"Columns: {list(df.columns)}")
+        # dataframe_log.info(f"Columns: {list(df.columns)}")
 
         # Data Types
-        # logging.info(f"2. Data Types:\n{df.dtypes.to_string()}")
+        # dataframe_log.info(f"2. Data Types:\n{df.dtypes.to_string()}")
 
         # 2. Info Summary
         buffer = StringIO()
         df.info(buf=buffer)
-        logging.info(f"2. Info:\n{buffer.getvalue()}")
+        dataframe_log.info(f"2. Info:\n{buffer.getvalue()}")
 
         # 3. Descriptive Statistics
-        logging.info(f"3. Describe:\n{df.describe().to_string()}")
+        dataframe_log.info(f"3. Describe:\n{df.describe().to_string()}")
 
         # Null Values Count
-        # logging.info(f"Null Values:\n{df.isnull().sum().to_string()}")
+        # dataframe_log.info(f"Null Values:\n{df.isnull().sum().to_string()}")
 
         # 4. Null Percentage
         null_pct = (df.isnull().sum() / len(df)) * 100
-        logging.info(f"4. Null Percentages:\n{null_pct.to_string()}")
+        dataframe_log.info(f"4. Null Percentages:\n{null_pct.to_string()}")
 
         # 5. Duplicate Rows Count
-        logging.info(f"5. Duplicate Rows: {df.duplicated().sum()}")
+        dataframe_log.info(f"5. Duplicate Rows: {df.duplicated().sum()}")
 
         # 6. Duplicate Percentage
         dup_pct = (df.duplicated().sum() / len(df)) * 100 if len(df) > 0 else 0
-        logging.info(f"6. Duplicate Percentage: {dup_pct}")
+        dataframe_log.info(f"6. Duplicate Percentage: {dup_pct}")
 
         # 7. Unique Values per Column
-        logging.info(f"7. Unique Values:\n{df.nunique().to_string()}")
+        dataframe_log.info(f"7. Unique Values:\n{df.nunique().to_string()}")
 
         # Head Preview
-        # logging.info(f"Head:\n{df.head(5).to_string()}")
+        # dataframe_log.info(f"Head:\n{df.head(5).to_string()}")
 
         # 8. Outlier Detection (IQR)
         numeric_cols = df.select_dtypes(include=np.number).columns
         if not numeric_cols.empty:
-            logging.info("8. Outliers (IQR method):")
+            dataframe_log.info("8. Outliers (IQR method):")
             for col in numeric_cols:
                 Q1 = df[col].quantile(0.25)
                 Q3 = df[col].quantile(0.75)
                 IQR = Q3 - Q1
                 outliers_count = ((df[col] < (Q1 - 1.5 * IQR)) | (df[col] > (Q3 + 1.5 * IQR))).sum()
-                logging.info(f"   - Outliers in {col}: {outliers_count}")
+                dataframe_log.info(f"   - Outliers in {col}: {outliers_count}")
         else:
-            logging.info("8. No numeric columns for outlier detection.")
+            dataframe_log.info("8. No numeric columns for outlier detection.")
 
     except Exception as e:
-        logging.error(f"Error analyzing {df_name}: {str(e)}")
+        dataframe_log.error(f"Error analyzing {df_name}: {str(e)}")
 
-    logging.info(f"Finished analysis for DataFrame: {df_name}")
+    dataframe_log.info(f"Finished analysis for DataFrame: {df_name}")
 
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     """
