@@ -4,6 +4,7 @@ from src.etl.connect import *
 import time
 import ast
 import requests
+import brotli
 import pandas as pd
 import numpy as np
 import logging
@@ -309,16 +310,17 @@ def eduschool_fetch_employees(token, year="6841869b8eb7901bc71c7807", branch="68
     def fetch_all_employees():
         response = requests.get(base_url, params=params, headers=headers)
         response.raise_for_status()  # Raise error if not 200
-        data = response.json()
+        if response.headers.get("Content-Encoding") == "br":
+            try:
+                data = brotli.decompress(response.content)
+            except brotli.error as e:
+                print("Brotli decompression failed:", e)
+                data_dict = json.loads(response.content)
+                data = data_dict['data']['data']
+        else:
+            data = response.json()
 
-        # Check success instead of code, per preview format
-        if not data.get('success', False):
-            raise ValueError(f"API error: {data.get('message', 'Unknown error')}")
-
-        # Access data per preview: data['data']['data'] for employees, data['data']['total'] for total
-        employees = data['data']['data'] if 'data' in data['data'] else data['data']  # Handle potential wrapper
-
-        return employees
+        return data
 
     # Fetch data
     employees_data = fetch_all_employees()

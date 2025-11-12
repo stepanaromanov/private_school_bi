@@ -22,7 +22,7 @@ def load_to_postgres(
     Load a pandas DataFrame to PostgreSQL with upsert functionality (psycopg 3.x).
     """
     df_name = getattr(df, "name", "unidentified")
-    logging.info(f"{'=' * 50}\n\nLoading to postgres for DataFrame: {df_name}\n\n{'=' * 50}")
+    logging.info(f"{'=' * 30}\n\nLoading to postgres for DataFrame: {df_name}\n\n{'=' * 30}")
 
     # Load credentials
     with open(creds_file, 'r') as f:
@@ -129,7 +129,7 @@ def load_to_postgres(
                 raise
             finally:
                 logging.info(f"[{table_name}] PostgreSQL connection closed.")
-    logging.info(f"{'=' * 50}\n\nLoading to postgres for DataFrame: {df_name} finished.\n\n{'=' * 50}")
+    logging.info(f"Loading to postgres for DataFrame: {df_name} finished.")
 
 
 def load_history_to_postgres(
@@ -146,7 +146,7 @@ def load_history_to_postgres(
     Load a pandas DataFrame to PostgreSQL by appending new historical values with auto-generated primary key.
     """
     df_name = getattr(df, "name", "unidentified")
-    logging.info(f"{'=' * 50}\n\nLoading to postgres for DataFrame: {df_name}\n\n{'=' * 50}")
+    logging.info(f"{'=' * 30}\n\nLoading to postgres for DataFrame: {df_name}\n\n{'=' * 30}")
 
     # Load credentials
     with open(creds_file, 'r') as f:
@@ -247,4 +247,4 @@ def load_history_to_postgres(
                 raise
             finally:
                 logging.info(f"[{table_name}] PostgreSQL connection closed.")
-    logging.info(f"{'=' * 50}\n\nLoading to postgres for DataFrame: {df_name} HISTORY 🗂 finished.\n\n{'=' * 50}")
+    logging.info(f"Loading to postgres for DataFrame: {df_name} HISTORY 🗂 finished.")
