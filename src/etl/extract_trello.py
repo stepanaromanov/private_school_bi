@@ -112,6 +112,7 @@ def trello_fetch_data(key, token, base_url = "https://api.trello.com/1"):
     boards_df = normalize_columns(boards_df)
     boards_df = add_timestamp(boards_df)
     boards_df.attrs["name"] = "trello_boards"
+    save_df_with_timestamp(df=boards_df)
 
     # --- Cards preprocessing ---
     cards_df.fillna(0, inplace=True)
@@ -119,6 +120,7 @@ def trello_fetch_data(key, token, base_url = "https://api.trello.com/1"):
     cards_df = normalize_columns(cards_df)
     cards_df = add_timestamp(cards_df)
     cards_df.attrs["name"] = "trello_cards"
+    save_df_with_timestamp(df=cards_df)
 
     # --- Lists preprocessing ---
     lists_df.fillna(0, inplace=True)
@@ -126,6 +128,7 @@ def trello_fetch_data(key, token, base_url = "https://api.trello.com/1"):
     lists_df = normalize_columns(lists_df)
     lists_df = add_timestamp(lists_df)
     lists_df.attrs["name"] = "trello_lists"
+    save_df_with_timestamp(df=lists_df)
 
     # --- Checklists  preprocessing ---
     checklists_df.fillna(0, inplace=True)
@@ -133,5 +136,6 @@ def trello_fetch_data(key, token, base_url = "https://api.trello.com/1"):
     checklists_df = normalize_columns(checklists_df)
     checklists_df = add_timestamp(checklists_df)
     checklists_df.attrs["name"] = "trello_checklists"
+    save_df_with_timestamp(df=checklists_df)
 
     return  boards_df, cards_df, checklists_df, lists_df
