@@ -8,6 +8,7 @@ from departments import finance
 from departments import hr
 from departments import marketing
 from departments import sales
+from departments import trello
 
 
 def main():

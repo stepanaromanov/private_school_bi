@@ -217,6 +217,7 @@ def trello_token():
         with open("credentials/trello.json", "r") as f:
             creds = json.load(f)
 
+        # get key and secret https://trello.com/app-key
         # get new token https://trello.com/1/authorize?expiration=never&name=TrelloAPI&scope=read,write&response_type=token&key={key}
         key = creds["key"]
         token = creds["token"]
@@ -224,5 +225,5 @@ def trello_token():
         return key, token  # Return as tuple
 
     except Exception as e:
-        print(f"❌ Failed to get Trello token: {e}")
+        print(f"❌ Failed to get Trello key and token: {e}")
         return None, None  # Explicit fallback
