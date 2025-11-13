@@ -1,5 +1,3 @@
-from src.utils.utils_dataframe import *
-from src.utils.utils_general import *
 from src.etl.connect import *
 from src.etl.extract_trello import *
 from src.etl.load import *
@@ -14,7 +12,7 @@ except Exception as e:
 
 if key and token:
     try:
-        boards_df, cards_df, lists_df, checklists_df = trello_fetch_data(key=key, token=token)
+        boards_df, cards_df, checklists_df, lists_df = trello_fetch_data(key=key, token=token)
 
         load_to_postgres(df=boards_df, dept="trello", table_base_name="boards", postfix="25", primary_key="id")
         load_history_to_postgres(df=boards_df, dept="trello", table_base_name="boards", postfix="25",
