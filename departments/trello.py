@@ -15,18 +15,14 @@ if key and token:
         boards_df, cards_df, checklists_df, lists_df = trello_fetch_data(key=key, token=token)
 
         load_to_postgres(df=boards_df, dept="trello", table_base_name="boards", postfix="25", primary_key="id")
-        load_history_to_postgres(df=boards_df, dept="trello", table_base_name="boards", postfix="25",
-                                 primary_key="id")
+
         load_to_postgres(df=cards_df, dept="trello", table_base_name="cards", postfix="25", primary_key="id")
-        load_history_to_postgres(df=cards_df, dept="trello", table_base_name="cards", postfix="25",
-                                 primary_key="id")
+        load_history_to_postgres(df=cards_df, dept="trello", table_base_name="cards", postfix="25", primary_key="id")
+
         load_to_postgres(df=lists_df, dept="trello", table_base_name="lists", postfix="25", primary_key="id")
-        load_history_to_postgres(df=lists_df, dept="trello", table_base_name="lists", postfix="25",
-                                 primary_key="id")
+
         load_to_postgres(df=checklists_df, dept="trello", table_base_name="checklists", postfix="25", primary_key="id")
-        load_history_to_postgres(df=checklists_df, dept="trello", table_base_name="checklists", postfix="25",
-                                 primary_key="id")
+        load_history_to_postgres(df=checklists_df, dept="trello", table_base_name="checklists", postfix="25", primary_key="id")
 
     except Exception as e:
         logging.exception(f"❌Failed to fetch/load trello: {e}")
-        trello_data = None
