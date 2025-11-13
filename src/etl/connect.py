@@ -210,3 +210,19 @@ def eduschool_headers(token, year, branch):
 
     return headers
 
+
+def trello_token():
+    try:
+        # Load credentials from JSON file
+        with open("credentials/trello.json", "r") as f:
+            creds = json.load(f)
+
+        # get new token https://trello.com/1/authorize?expiration=never&name=TrelloAPI&scope=read,write&response_type=token&key={key}
+        key = creds["key"]
+        token = creds["token"]
+
+        return key, token  # Return as tuple
+
+    except Exception as e:
+        print(f"❌ Failed to get Trello token: {e}")
+        return None, None  # Explicit fallback
