@@ -1,5 +1,6 @@
 # pip freeze > requirements.txt
 import json
+import ast
 import os
 import logging
 from configs import logging_config
@@ -209,6 +210,24 @@ def eduschool_headers(token, year, branch):
     }
 
     return headers
+
+def marketing_facebook_token():
+    try:
+        # Load credentials from JSON file
+        with open("credentials/meta.json", "r") as f:
+            creds = json.load(f)
+
+        # get key and secret https://trello.com/app-key
+        # get new token https://trello.com/1/authorize?expiration=never&name=TrelloAPI&scope=read,write&response_type=token&key={key}
+        token = creds["token"]
+        ad_account_ids = creds["ad_account_ids"]
+        ad_account_ids = ast.literal_eval(ad_account_ids)
+
+        return token, ad_account_ids  # Return as tuple
+
+    except Exception as e:
+        print(f"❌ Failed to get marketing facebook token: {e}")
+        return None, None  # Explicit fallback
 
 
 def trello_token():
