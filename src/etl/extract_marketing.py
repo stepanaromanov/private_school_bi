@@ -142,6 +142,8 @@ def fetch_marketing_facebook_data(access_token, ad_account_ids, api_version="v24
             # Convert non-datetime column to UTC timestamp Series
             facebook_data[col] = pd.to_datetime(facebook_data[col], errors="coerce").dt.tz_localize("UTC")
 
+    facebook_data.rename(columns={'campaign_id': 'id'}, inplace=True)
+
     facebook_data.fillna(0, inplace=True)
     facebook_data = clean_string_columns(facebook_data)
     facebook_data = normalize_columns(facebook_data)

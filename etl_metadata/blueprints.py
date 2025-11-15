@@ -232,7 +232,7 @@ expected_columns_dict = {
     },
     "marketing_facebook": {
         "campaign_name",
-        "campaign_id",
+        "id",
         "impressions",
         "clicks",
         "spend",
@@ -452,7 +452,7 @@ expected_columns_dict = {
         "id",
         "name",
         "url",
-        "desc",
+        "board_desc",
         "closed",
         "fetched_timestamp",
         "last_activity_timestamp",
@@ -461,7 +461,7 @@ expected_columns_dict = {
     "trello_cards": {
         "board_id",
         "list_id",
-        "card_id",
+        "id",
         "card_name",
         "card_desc",
         "card_labels",
@@ -474,7 +474,7 @@ expected_columns_dict = {
     "trello_checklists": {
         "board_id",
         "card_id",
-        "checklist_id",
+        "id",
         "checklist_name",
         "item_name",
         "state",
@@ -482,7 +482,7 @@ expected_columns_dict = {
     },
     "trello_lists": {
         "board_id",
-        "list_id",
+        "id",
         "list_name",
         "closed",
         "fetched_timestamp",

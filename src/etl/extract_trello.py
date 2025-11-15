@@ -36,7 +36,7 @@ def trello_fetch_data(key, token, base_url = "https://api.trello.com/1"):
         "id": b.get("id"),
         "name": b.get("name"),
         "url": b.get("url"),
-        "desc": b.get("desc"),
+        "board_desc": b.get("desc"),
         "closed": b.get("closed"),
         "last_activity": b.get("dateLastActivity"),
         "last_view": b.get("dateLastView")
@@ -57,7 +57,7 @@ def trello_fetch_data(key, token, base_url = "https://api.trello.com/1"):
         for lst in lists:
             all_lists.append({
                 "board_id": board_id,
-                "list_id": lst.get("id"),
+                "id": lst.get("id"),
                 "list_name": lst.get("name"),
                 "closed": lst.get("closed")
             })
@@ -69,7 +69,7 @@ def trello_fetch_data(key, token, base_url = "https://api.trello.com/1"):
             all_cards.append({
                 "board_id": board_id,
                 "list_id": card.get("idList"),
-                "card_id": card.get("id"),
+                "id": card.get("id"),
                 "card_name": card.get("name"),
                 "card_desc": card.get("desc"),
                 "card_labels": card.get("labels"),
@@ -98,7 +98,7 @@ def trello_fetch_data(key, token, base_url = "https://api.trello.com/1"):
                 all_checklists.append({
                     "board_id": board_id,
                     "card_id": card_id,
-                    "checklist_id": checklist.get("id"),
+                    "id": checklist.get("id"),
                     "checklist_name": checklist.get("name"),
                     "item_name": item.get("name"),
                     "state": item.get("state")
