@@ -88,7 +88,7 @@ def trello_fetch_data(key, token, base_url = "https://api.trello.com/1"):
     all_checklists = []
 
     for _, card in cards_df.iterrows():
-        card_id = card["card_id"]
+        card_id = card["id"]
         board_id = card["board_id"]
 
         checklists = fetch(f"{base_url}/cards/{card_id}/checklists")
