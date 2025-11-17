@@ -1,14 +1,15 @@
 from src.etl.connect import *
 from src.etl.extract_trello import *
 from src.etl.load import *
-import logging
+from configs.logging_config import get_logger
+logger = get_logger(__name__)
 
 
 try:
     key, token = trello_token()
-    logging.info("Trello key and token successfully retrieved.")
+    logger.info("Trello key and token successfully retrieved.")
 except Exception as e:
-    logging.exception(f"❌Failed to retrieve Trello key and token: {e}")
+    logger.exception(f"❌Failed to retrieve Trello key and token: {e}")
 
 if key and token:
     try:
@@ -25,4 +26,4 @@ if key and token:
         load_history_to_postgres(df=checklists_df, dept="trello", table_base_name="checklists", postfix="25", primary_key="id")
 
     except Exception as e:
-        logging.exception(f"❌Failed to fetch/load trello: {e}")
+        logger.exception(f"❌Failed to fetch/load trello: {e}")

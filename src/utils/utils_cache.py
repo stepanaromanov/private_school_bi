@@ -1,6 +1,7 @@
 import os
 import json
-import logging
+from configs.logging_config import get_logger
+logger = get_logger(__name__)
 
 def update_json_cache(file_name: str, updates: dict, dir: str):
     """
@@ -24,7 +25,7 @@ def update_json_cache(file_name: str, updates: dict, dir: str):
 
     # Ensure it's a dict
     if not isinstance(data, dict):
-        logging.info(f"File {path} is not a dict — overwriting with new one.")
+        logger.info(f"File {path} is not a dict — overwriting with new one.")
         data = {}
 
     data.update(updates)
@@ -33,4 +34,4 @@ def update_json_cache(file_name: str, updates: dict, dir: str):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-    logging.info(f"Updated cache file: {path}")
+    logger.info(f"Updated cache file: {path}")

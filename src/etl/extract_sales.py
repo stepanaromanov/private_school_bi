@@ -2,8 +2,9 @@ import requests
 from src.utils.utils_dataframe import *
 from src.utils.utils_cache import *
 import pandas as pd
-import logging
 import json
+from configs.logging_config import get_logger
+logger = get_logger(__name__)
 
 
 with open("credentials/amocrm.json", "r") as f:
@@ -33,7 +34,7 @@ def amocrm_get_all_items(endpoint, headers):
 
 
 def amocrm_get_catalogs(headers):
-    logging.info("SALES: Downloading catalogs...")
+    logger.info("SALES: Downloading catalogs...")
     catalogs = amocrm_get_all_items("catalogs", headers)
     catalogs_df = pd.DataFrame(catalogs)
     catalogs_df.fillna(0, inplace=True)
@@ -51,7 +52,7 @@ def amocrm_get_catalogs(headers):
 
 
 def amocrm_get_companies(headers):
-    logging.info("SALES: Downloading companies...")
+    logger.info("SALES: Downloading companies...")
     companies = amocrm_get_all_items("companies", headers)
     companies_df = pd.DataFrame(companies)
 
@@ -71,7 +72,7 @@ def amocrm_get_companies(headers):
 
 
 def amocrm_get_contacts(headers):
-    logging.info("SALES: Downloading contacts...")
+    logger.info("SALES: Downloading contacts...")
     contacts = amocrm_get_all_items("contacts", headers)
     contacts_df = pd.DataFrame(contacts)
 
@@ -91,7 +92,7 @@ def amocrm_get_contacts(headers):
 
 
 def amocrm_get_leads(headers):
-    logging.info("SALES: Downloading leads...")
+    logger.info("SALES: Downloading leads...")
     leads = amocrm_get_all_items("leads", headers)
     leads_df = pd.DataFrame(leads)
 
@@ -175,7 +176,7 @@ def amocrm_get_leads(headers):
 
 
 def amocrm_get_loss_reasons(headers):
-    logging.info("SALES: Downloading loss reasons...")
+    logger.info("SALES: Downloading loss reasons...")
     response = requests.get(f"{BASE_URL}/leads/loss_reasons", headers=headers)
     response.raise_for_status()
     loss_reasons = response.json()["_embedded"]["loss_reasons"]
@@ -198,7 +199,7 @@ def amocrm_get_loss_reasons(headers):
 
 
 def amocrm_get_pipelines_statuses(headers):
-    logging.info("SALES: Downloading pipelines...")
+    logger.info("SALES: Downloading pipelines...")
     pipelines_resp = requests.get(f"{BASE_URL}/leads/pipelines", headers=headers)
     pipelines_resp.raise_for_status()
     pipelines = pipelines_resp.json()["_embedded"]["pipelines"]
@@ -213,7 +214,7 @@ def amocrm_get_pipelines_statuses(headers):
 
     save_df_with_timestamp(df=pipelines_df)
 
-    logging.info("SALES: Downloading statuses...")
+    logger.info("SALES: Downloading statuses...")
 
     statuses = []
     for pipeline in pipelines:
@@ -245,7 +246,7 @@ def amocrm_get_pipelines_statuses(headers):
 
 
 def amocrm_get_tags_custom_fields(headers):
-    logging.info("SALES: Downloading tags and custom fields...")
+    logger.info("SALES: Downloading tags and custom fields...")
 
     tags_df = pd.DataFrame()
     custom_fields_df = pd.DataFrame()
@@ -296,7 +297,7 @@ def amocrm_get_tags_custom_fields(headers):
 
 
 def amocrm_get_tasks(headers):
-    logging.info("SALES: Downloading tasks...")
+    logger.info("SALES: Downloading tasks...")
     tasks = amocrm_get_all_items("tasks", headers)
     tasks_df = pd.DataFrame(tasks)
     tasks_df.fillna(0, inplace=True)
@@ -316,7 +317,7 @@ def amocrm_get_tasks(headers):
 
 
 def amocrm_get_task_types(headers):
-    logging.info("SALES: Downloading task types...")
+    logger.info("SALES: Downloading task types...")
     response = requests.get(f"{BASE_URL}/account?with=task_types", headers=headers)
     response.raise_for_status()
     task_types = response.json()["_embedded"]["task_types"]
@@ -336,7 +337,7 @@ def amocrm_get_task_types(headers):
 
 
 def amocrm_get_users(headers):
-    logging.info("SALES: Downloading users...")
+    logger.info("SALES: Downloading users...")
     users = amocrm_get_all_items("users", headers)
     users_df = pd.DataFrame(users)
 

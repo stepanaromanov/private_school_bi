@@ -1,15 +1,15 @@
 # pip freeze > requirements.txt
 import re
 from io import StringIO
-import logging
 import numpy as np
-from configs import logging_config
 from pathlib import Path
 from datetime import datetime, timedelta
 from etl_metadata.blueprints import expected_columns_dict
 import pandas as pd
+from configs.logging_config import get_logger
 
-dataframe_log = logging_config.get_logger(name="dataframe_log", level=logging.DEBUG)
+logger = get_logger(__name__)
+dataframe_log = get_logger(name="dataframe_log")
 
 def add_timestamp(df: pd.DataFrame, col: str = "fetched_timestamp") -> pd.DataFrame:
     """
@@ -158,7 +158,7 @@ def log_df(df: pd.DataFrame):
                     error_msg += f"MISSING: {missing}. "
                 if extra:
                     error_msg += f"EXTRA: {extra}. "
-                logging.error(error_msg)
+                logger.error(error_msg)
 
                 # KEEP ONLY EXPECTED COLUMNS
                 # Create missing columns as NaN to avoid KeyError
@@ -166,10 +166,10 @@ def log_df(df: pd.DataFrame):
                     df[col] = None
 
                 df = df[list(expected_cols)]
-                logging.info("✅ Cleaned DataFrame to expected columns only.")
+                logger.info("✅ Cleaned DataFrame to expected columns only.")
 
             else:
-                logging.info("✅🏛️ EXPECTED COLUMNS MATCH.")
+                logger.info("✅🏛️ EXPECTED COLUMNS MATCH.")
 
         # 1. Shape Check
         dataframe_log.info(f"1. Shape: {df.shape}")
@@ -285,11 +285,11 @@ def save_df_with_timestamp(
 
         # save to CSV
         df.to_csv(file_path, index=False, encoding="utf-8")
-        logging.info(f"✅ DataFrame saved: {file_path}")
+        logger.info(f"✅ DataFrame saved: {file_path}")
         return str(file_path)
 
     except Exception as e:
-        logging.error(f"❌ Failed to save DataFrame {df_name}: {e}")
+        logger.error(f"❌ Failed to save DataFrame {df_name}: {e}")
         raise
 
 

@@ -1,3 +1,6 @@
+'''
+OLD LOGGING
+
 import logging
 from pathlib import Path
 from datetime import datetime
@@ -57,3 +60,43 @@ def get_logger(name: str, level=logging.INFO):
             logger.addHandler(h)
 
     return logger
+
+'''
+
+import logging
+from pathlib import Path
+from datetime import datetime
+
+_is_configured = False  # prevents double logging
+
+def setup_logging():
+    global _is_configured
+    if _is_configured:
+        return
+
+    # Create log folder
+    log_folder = Path("logs")
+    log_folder.mkdir(parents=True, exist_ok=True)
+
+    # Daily filename
+    today = datetime.now().strftime("%Y_%m_%d")
+    root_log_file = log_folder / f"{today}.log"
+
+    # Configure root logger
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%H:%M:%S",
+        handlers=[
+            logging.FileHandler(root_log_file, encoding="utf-8"),
+            logging.StreamHandler()
+        ]
+    )
+
+    logging.info("Root logger initialized")
+    _is_configured = True
+
+
+def get_logger(name: str):
+    """Simple module logger without extra handlers."""
+    return logging.getLogger(name)

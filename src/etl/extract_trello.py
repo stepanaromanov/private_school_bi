@@ -1,8 +1,8 @@
 from src.utils.utils_dataframe import *
-from src.utils.utils_general import *
 from src.etl.connect import *
-import logging
 import requests
+from configs.logging_config import get_logger
+logger = get_logger(__name__)
 
 
 def trello_fetch_data(key, token, base_url = "https://api.trello.com/1"):
@@ -17,13 +17,13 @@ def trello_fetch_data(key, token, base_url = "https://api.trello.com/1"):
             try:
                 return response.json()
             except ValueError:
-                logging.error(f"⚠️ JSON decode error for {url}")
+                logger.error(f"⚠️ JSON decode error for {url}")
                 return []
         except requests.exceptions.RequestException as e:
-            logging.error(f"⚠️ Request failed for {url}: {e}")
+            logger.error(f"⚠️ Request failed for {url}: {e}")
             return []
         except Exception as e:
-            logging.error(f"⚠️ Unexpected error while fetching {url}: {e}")
+            logger.error(f"⚠️ Unexpected error while fetching {url}: {e}")
             return []
 
     # ------------------------------------------------------

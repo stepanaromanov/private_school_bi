@@ -1,15 +1,15 @@
 from src.utils.utils_dataframe import *
-from src.utils.utils_general import *
 from src.etl.connect import *
 import time
 import ast
 import requests
 import brotli
 import pandas as pd
-import numpy as np
-import logging
 import datetime
 import secrets
+from configs.logging_config import get_logger
+logger = get_logger(__name__)
+
 
 
 def eduschool_fetch_attendance_and_marks(token, classes_df, quarters_df, journals_df, year="6841869b8eb7901bc71c7807", branch="68417f7edbbdfc73ada6ef01"):
@@ -63,11 +63,11 @@ def eduschool_fetch_attendance_and_marks(token, classes_df, quarters_df, journal
             attendances = [att for block in data['data']['data'] for att in block.get('attendances', [])]
             return True, attendance_context, attendances  # Success flag
         except requests.exceptions.Timeout:
-            logging.error(
+            logger.error(
                 f"Timeout after {timeout_sec}s for class {class_id}, subject {subject_id}, quarter {quarter_id}")
             return False, [], []  # Failure flag
         except Exception as e:
-            logging.error(f"Unexpected error for class {class_id}, subject {subject_id}, quarter {quarter_id}: {e}")
+            logger.error(f"Unexpected error for class {class_id}, subject {subject_id}, quarter {quarter_id}: {e}")
             return False, [], []  # Failure flag, no raise to allow queueing
 
     all_attendance_context = []
@@ -81,7 +81,7 @@ def eduschool_fetch_attendance_and_marks(token, classes_df, quarters_df, journal
             # if len(all_attendance_context) > 100: break
             relevant_journal_ids = class_to_journals.get(class_id, [])
             if not relevant_journal_ids:
-                logging.info(f"Skipping class {class_id} as it has no associated journals.")
+                logger.info(f"Skipping class {class_id} as it has no associated journals.")
                 continue
             for subject_id in relevant_journal_ids:
                 # if len(all_attendance_context) > 100: break
@@ -99,9 +99,9 @@ def eduschool_fetch_attendance_and_marks(token, classes_df, quarters_df, journal
 
     # Second retry queue: Attempt failed combos again (with optional increased timeout)
     if retry_queue:
-        logging.info(f"Retrying {len(retry_queue)} failed fetches...")
+        logger.info(f"Retrying {len(retry_queue)} failed fetches...")
         for quarter_id, class_id, subject_id in retry_queue:
-            logging.info(
+            logger.info(
                 f"Retry starting for quarter {quarter_id}, class {class_id}, subject {subject_id} at {time.time()}")
             success, attendance_context, attendances = fetch_attendance(quarter_id, class_id, subject_id,
                                                                         timeout_sec=60)  # Increased timeout for retry
@@ -114,7 +114,7 @@ def eduschool_fetch_attendance_and_marks(token, classes_df, quarters_df, journal
                 all_attendance_context.extend(attendance_context)
                 all_attendances.extend(attendances)
             else:
-                logging.warning(f"Retry failed again for class {class_id}, subject {subject_id}, quarter {quarter_id}")
+                logger.warning(f"Retry failed again for class {class_id}, subject {subject_id}, quarter {quarter_id}")
 
     # Create DataFrames
     df_attendance_context = pd.DataFrame(all_attendance_context)
@@ -290,7 +290,7 @@ def eduschool_fetch_classes(token, year="6841869b8eb7901bc71c7807", branch="6841
         lambda s: fill_and_numeric(s, dtype="int"))
     df = df.rename(columns={"letter": "section", "language": "instruction_language"})
 
-    logging.info("Eduschool. Classes have been fetched.")
+    logger.info("Eduschool. Classes have been fetched.")
 
     df.attrs["name"] = "education_classes"
     save_df_with_timestamp(df=df)

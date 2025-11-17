@@ -1,12 +1,12 @@
 from src.utils.utils_dataframe import *
-from src.utils.utils_general import *
 import pandas as pd
 import psycopg
 from psycopg.rows import dict_row
 import json
-import logging
-from configs import logging_config
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from configs.logging_config import get_logger
+logger = get_logger(__name__)
+
 
 def load_to_postgres(
         df: pd.DataFrame,
@@ -22,7 +22,7 @@ def load_to_postgres(
     Load a pandas DataFrame to PostgreSQL with upsert functionality (psycopg 3.x).
     """
     df_name = getattr(df, "name", "unidentified")
-    logging.info(f"{'=' * 30}\n\nLoading to postgres for DataFrame: {df_name}\n\n{'=' * 30}")
+    logger.info(f"{'=' * 30}\n\nLoading to postgres for DataFrame: {df_name}\n\n{'=' * 30}")
 
     # Load credentials
     with open(creds_file, 'r') as f:
@@ -73,14 +73,14 @@ def load_to_postgres(
                 create_table_sql += ',\n'.join(columns_def) + '\n);'
                 cur.execute(create_table_sql)
                 conn.commit()
-                logging.info(f"[{table_name}] Table created or verified.")
+                logger.info(f"[{table_name}] Table created or verified.")
 
                 # Truncate table if requested
                 if truncate:
                     truncate_sql = f"TRUNCATE TABLE {table_name};"
                     cur.execute(truncate_sql)
                     conn.commit()
-                    logging.info(f"[{table_name}] Table truncated.")
+                    logger.info(f"[{table_name}] Table truncated.")
 
                 # Prepare upsert SQL
                 update_cols = [col for col in df.columns if col != primary_key]
@@ -105,7 +105,7 @@ def load_to_postgres(
                                 updates = len(results) - inserts
                                 return inserts, updates
                     except Exception as e:
-                        logging.error(f"[{table_name}] Batch execution error: {e}")
+                        logger.error(f"[{table_name}] Batch execution error: {e}")
                         return 0, 0
 
                 # Parallel insertion using ThreadPoolExecutor
@@ -122,14 +122,14 @@ def load_to_postgres(
                         inserts, updates = future.result()
                         total_inserts += inserts
                         total_updates += updates
-                logging.info(f"Total inserts made: {total_inserts}, total updates made: {total_updates}")
+                logger.info(f"Total inserts made: {total_inserts}, total updates made: {total_updates}")
             except Exception as e:
-                logging.error(f"[{table_name}] Error during load: {e}")
+                logger.error(f"[{table_name}] Error during load: {e}")
                 conn.rollback()
                 raise
             finally:
-                logging.info(f"[{table_name}] PostgreSQL connection closed.")
-    logging.info(f"Loading to postgres for DataFrame: {df_name} finished.")
+                logger.info(f"[{table_name}] PostgreSQL connection closed.")
+    logger.info(f"Loading to postgres for DataFrame: {df_name} finished.")
 
 
 def load_history_to_postgres(
@@ -146,7 +146,7 @@ def load_history_to_postgres(
     Load a pandas DataFrame to PostgreSQL by appending new historical values with auto-generated primary key.
     """
     df_name = getattr(df, "name", "unidentified")
-    logging.info(f"{'=' * 30}\n\nLoading to postgres for DataFrame: {df_name}\n\n{'=' * 30}")
+    logger.info(f"{'=' * 30}\n\nLoading to postgres for DataFrame: {df_name}\n\n{'=' * 30}")
 
     # Load credentials
     with open(creds_file, 'r') as f:
@@ -198,14 +198,14 @@ def load_history_to_postgres(
                 create_table_sql += ',\n'.join(columns_def) + '\n);'
                 cur.execute(create_table_sql)
                 conn.commit()
-                logging.info(f"[{table_name}] HISTORY 🗂 Table created or verified with auto-generated hist_id PK.")
+                logger.info(f"[{table_name}] HISTORY 🗂 Table created or verified with auto-generated hist_id PK.")
 
                 # Truncate table if requested (note: does not reset serial by default)
                 if truncate:
                     truncate_sql = f"TRUNCATE TABLE {table_name};"
                     cur.execute(truncate_sql)
                     conn.commit()
-                    logging.info(f"[{table_name}] Table truncated.")
+                    logger.info(f"[{table_name}] Table truncated.")
 
                 # Prepare insert SQL without ON CONFLICT, hist_id auto-generated
                 insert_sql = f"""
@@ -225,7 +225,7 @@ def load_history_to_postgres(
                                 inserts = len(results)  # All are inserts
                                 return inserts
                     except Exception as e:
-                        logging.error(f"[{table_name}] Batch execution error: {e}")
+                        logger.error(f"[{table_name}] Batch execution error: {e}")
                         return 0
 
                 # Parallel insertion using ThreadPoolExecutor
@@ -240,11 +240,11 @@ def load_history_to_postgres(
                     for future in as_completed(futures):
                         inserts = future.result()
                         total_inserts += inserts
-                logging.info(f"Total inserts made: {total_inserts}")
+                logger.info(f"Total inserts made: {total_inserts}")
             except Exception as e:
-                logging.error(f"[{table_name}] Error during load: {e}")
+                logger.error(f"[{table_name}] Error during load: {e}")
                 conn.rollback()
                 raise
             finally:
-                logging.info(f"[{table_name}] PostgreSQL connection closed.")
-    logging.info(f"Loading to postgres for DataFrame: {df_name} HISTORY 🗂 finished.")
+                logger.info(f"[{table_name}] PostgreSQL connection closed.")
+    logger.info(f"Loading to postgres for DataFrame: {df_name} HISTORY 🗂 finished.")

@@ -2,12 +2,12 @@
 import json
 import ast
 import os
-import logging
-from configs import logging_config
 import requests
 import pandas as pd
 from amocrm.v2 import tokens
 from datetime import datetime, timedelta
+from configs.logging_config import get_logger
+logger = get_logger(__name__)
 
 
 def amocrm_headers(access_token):
@@ -112,15 +112,15 @@ def eduschool_token():
             token_data = json.load(f)
             stored_timestamp = datetime.fromisoformat(token_data['timestamp'])
             if datetime.now().replace(tzinfo=None) - stored_timestamp.replace(tzinfo=None) < timedelta(weeks=49):
-                logging.info("Eduschool. Using existing valid token.")
+                logger.info("Eduschool. Using existing valid token.")
                 token = token_data['token']
                 # Exit or use the token as needed
             else:
-                logging.info("Eduschool. Token is older than 49 weeks. Deleting old file and refreshing.")
+                logger.info("Eduschool. Token is older than 49 weeks. Deleting old file and refreshing.")
                 os.remove(TOKEN_FILE)
                 refresh_token = True
     else:
-        logging.info("Eduschool. No token file found. Refreshing token.")
+        logger.info("Eduschool. No token file found. Refreshing token.")
         refresh_token = True
 
     # Refresh the token if needed
@@ -181,7 +181,7 @@ def eduschool_token():
         with open(TOKEN_FILE, 'w') as f:
             json.dump(new_token_data, f)
 
-        logging.info("Eduschool. New token stored.")
+        logger.info("Eduschool. New token stored.")
 
     return token
 

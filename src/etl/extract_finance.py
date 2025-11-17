@@ -1,15 +1,14 @@
 from src.utils.utils_dataframe import *
-from src.utils.utils_general import *
 from src.etl.connect import *
 import time
 import ast
 import requests
 import numpy as np
-import logging
-from configs import logging_config
 import datetime
 import requests
 import pandas as pd
+from configs.logging_config import get_logger
+logger = get_logger(__name__)
 
 
 # Function to fetch all transactions by paginating the API

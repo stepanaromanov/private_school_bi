@@ -1,16 +1,17 @@
 from src.etl.connect import eduschool_token
 from src.etl.extract_finance import *
 from src.etl.load import *
-import logging
 import datetime
+from configs.logging_config import get_logger
+logger = get_logger(__name__)
 
-logging.info("FINANCE DEPARTMENT ETL has started.")
+logger.info("FINANCE DEPARTMENT ETL has started.")
 
 try:
     token = eduschool_token()
-    logging.info("Token successfully retrieved.")
+    logger.info("Token successfully retrieved.")
 except Exception as e:
-    logging.exception(f"❌Failed to retrieve token: {e}")
+    logger.exception(f"❌Failed to retrieve token: {e}")
     token = None
 
 if token:
@@ -18,18 +19,18 @@ if token:
     try:
         transactions = finance_fetch_all_transactions(token)
         load_to_postgres(df=transactions, dept="finance", table_base_name="transactions", postfix="_2526", primary_key="id")
-        logging.info("Transactions successfully fetched and loaded.")
+        logger.info("Transactions successfully fetched and loaded.")
     except Exception as e:
-        logging.exception(f"❌Failed to fetch/load Urganch school transactions: {e}")
+        logger.exception(f"❌Failed to fetch/load Urganch school transactions: {e}")
         classes = None
 
     # --- TRANSACTIONS GURLAN OMON SCHOOL ---
     try:
         transactions = finance_fetch_all_transactions(token, branch="684d1fc04921a1211f725ec4")
         load_to_postgres(df=transactions, dept="finance", table_base_name="transactions", postfix="_2526", primary_key="id")
-        logging.info("Transactions successfully fetched and loaded.")
+        logger.info("Transactions successfully fetched and loaded.")
     except Exception as e:
-        logging.exception(f"❌Failed to fetch/load Gurlan school transactions: {e}")
+        logger.exception(f"❌Failed to fetch/load Gurlan school transactions: {e}")
         classes = None
 
-logging.info("FINANCE DEPARTMENT ETL run completed.")
+logger.info("FINANCE DEPARTMENT ETL run completed.")

@@ -1,10 +1,10 @@
 from src.utils.utils_dataframe import *
-from src.utils.utils_general import *
 from src.etl.connect import *
-import logging
 import requests
 import pandas as pd
 from datetime import datetime, timedelta
+from configs.logging_config import get_logger
+logger = get_logger(__name__)
 
 
 def fetch_marketing_facebook_data(access_token, ad_account_ids, api_version="v24.0"):
