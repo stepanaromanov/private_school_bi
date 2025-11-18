@@ -1,11 +1,21 @@
 from src.utils.utils_dataframe import *
 from src.etl.connect import *
+import pandas as pd
 import requests
+from datetime import datetime
 from configs.logging_config import get_logger
 logger = get_logger(__name__)
 
 
 def trello_fetch_data(key, token, base_url = "https://api.trello.com/1"):
+    """
+    get card creation datetime from Trello card ID
+    def trello_id_to_datetime(id):
+        try:
+            return datetime.fromtimestamp(int(id[:8], 16), datetime.UTC)
+        except Exception:
+            return pd.NaT
+    """
     # ------------------------------------------------------
     # Safe fetch helper with try/except and graceful fallback
     # ------------------------------------------------------
@@ -76,7 +86,8 @@ def trello_fetch_data(key, token, base_url = "https://api.trello.com/1"):
                 "due_date": card.get("due"),
                 "card_due_complete": card.get("dueComplete"),
                 "url": card.get("url"),
-                "closed": card.get("closed")
+                "closed": card.get("closed"),
+                # "created_at": trello_id_to_datetime(card.get("id"))
             })
 
     cards_df = pd.DataFrame(all_cards)
