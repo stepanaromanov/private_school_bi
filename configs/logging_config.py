@@ -82,7 +82,7 @@ def setup_logging():
     if _is_configured:
         return
 
-    root_log_file = log_folder / f"{today}.log"
+    root_log_file = log_folder / f"etl_log_{today}.log"
 
     # Configure root logger
     logging.basicConfig(
