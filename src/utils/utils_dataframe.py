@@ -8,7 +8,7 @@ from etl_metadata.blueprints import expected_columns_dict
 import pandas as pd
 from configs.logging_config import get_logger
 
-logger = get_logger(__name__)
+logger = get_logger("etl_log")
 dataframe_log = get_logger(name="dataframe_log")
 
 def add_timestamp(df: pd.DataFrame, col: str = "fetched_timestamp") -> pd.DataFrame:

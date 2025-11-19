@@ -4,7 +4,7 @@ import pandas as pd
 import requests
 from datetime import datetime
 from configs.logging_config import get_logger
-logger = get_logger(__name__)
+logger = get_logger("etl_log")
 
 
 def trello_fetch_data(key, token, base_url = "https://api.trello.com/1"):

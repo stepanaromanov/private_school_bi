@@ -7,7 +7,7 @@ import pandas as pd
 from amocrm.v2 import tokens
 from datetime import datetime, timedelta
 from configs.logging_config import get_logger
-logger = get_logger(__name__)
+logger = get_logger("etl_log")
 
 
 def amocrm_headers(access_token):

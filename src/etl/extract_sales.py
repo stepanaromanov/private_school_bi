@@ -4,7 +4,7 @@ from src.utils.utils_cache import *
 import pandas as pd
 import json
 from configs.logging_config import get_logger
-logger = get_logger(__name__)
+logger = get_logger("etl_log")
 
 
 with open("credentials/amocrm.json", "r") as f:

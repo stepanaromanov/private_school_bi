@@ -67,19 +67,21 @@ import logging
 from pathlib import Path
 from datetime import datetime
 
-_is_configured = False  # prevents double logging
+# prevents double logging
+_is_configured = False
+
+# Create log folder
+log_folder = Path("logs")
+log_folder.mkdir(parents=True, exist_ok=True)
+
+# Daily filename
+today = datetime.now().strftime("%Y_%m_%d")
 
 def setup_logging():
     global _is_configured
     if _is_configured:
         return
 
-    # Create log folder
-    log_folder = Path("logs")
-    log_folder.mkdir(parents=True, exist_ok=True)
-
-    # Daily filename
-    today = datetime.now().strftime("%Y_%m_%d")
     root_log_file = log_folder / f"{today}.log"
 
     # Configure root logger
@@ -97,6 +99,32 @@ def setup_logging():
     _is_configured = True
 
 
-def get_logger(name: str):
-    """Simple module logger without extra handlers."""
-    return logging.getLogger(name)
+def get_logger(name: str, level=logging.INFO):
+    """
+    Creates a logger with consistent formatting and daily log file.
+    :param name: Logger name (e.g., 'dataframe_log')
+    :param level: Logging level (default: INFO)
+    :return: configured logger
+    """
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    logger.propagate = False
+
+    log_file = log_folder / f"{name}_{today}.log"
+
+    formatter = logging.Formatter(
+        "%(asctime)s [%(levelname)s] %(name)s: %(message)s", "%H:%M:%S"
+    )
+
+    handlers = [
+        logging.FileHandler(log_file, encoding="utf-8"),
+        logging.StreamHandler()
+    ]
+
+    # Avoid duplicate handlers if logger is recreated
+    if not logger.handlers:
+        for h in handlers:
+            h.setFormatter(formatter)
+            logger.addHandler(h)
+
+    return logger

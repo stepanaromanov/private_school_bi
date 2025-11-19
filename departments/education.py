@@ -3,7 +3,7 @@ from src.etl.extract_education import *
 from src.etl.load import *
 import datetime
 from configs.logging_config import get_logger
-logger = get_logger(__name__)
+logger = get_logger("etl_log")
 
 logger.info("EDUCATION DEPARTMENT ETL has started.")
 

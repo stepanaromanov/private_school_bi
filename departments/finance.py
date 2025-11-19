@@ -3,7 +3,7 @@ from src.etl.extract_finance import *
 from src.etl.load import *
 import datetime
 from configs.logging_config import get_logger
-logger = get_logger(__name__)
+logger = get_logger("etl_log")
 
 logger.info("FINANCE DEPARTMENT ETL has started.")
 

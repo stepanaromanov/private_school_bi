@@ -2,7 +2,7 @@ from src.etl.connect import *
 from src.etl.extract_trello import *
 from src.etl.load import *
 from configs.logging_config import get_logger
-logger = get_logger(__name__)
+logger = get_logger("etl_log")
 
 
 try:

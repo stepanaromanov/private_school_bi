@@ -5,8 +5,7 @@ from psycopg.rows import dict_row
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from configs.logging_config import get_logger
-logger = get_logger(__name__)
-
+logger = get_logger("etl_log")
 
 def load_to_postgres(
         df: pd.DataFrame,
