@@ -1342,11 +1342,25 @@ LEFT JOIN checklists ON boards.id = checklists.board_id AND cards.id = checklist
 
 /*
 
-# 20.11.2025 machine learning churn analysis 
+20.11.2025 ML churn analysis 
+
+Data description (example):
+
+            balance         attended_percentage     all_marks       average_mark
+
+count       6.280000e+02    628.000000              628.000000      619.000000
+mean        -3.811917e+05   0.942190                54.181529       4.591454
+std         2.246799e+06    0.075745                33.334975       0.367276
+min         -6.500000e+06   0.125000                0.000000        2.880000
+25%         -1.626250e+06   0.914384                28.000000       4.400000
+50%         0.000000e+00    0.965825                52.000000       4.670000
+75%         0.000000e+00    0.989672                77.000000       4.890000
+max         1.979500e+07    1.000000                163.000000      5.000000
+
 
 Feature importance:
 
-- attendance 50.1%
+- Attendance 50.1%
 - All marks 25.2%
 - Average mark 13.9%
 - Balance 10.8%
@@ -1360,6 +1374,7 @@ Output range: [min_y, max_y]
 
 
 Formula derivation:
+
 1. General normalization:
    y = (x - min_x) * (max_y - min_y) / (max_x - min_x) + min_y
 
@@ -1380,21 +1395,11 @@ Goal:
 4. Final formula:
    y = (x + 200) * 0.00251256
 
-((ratio + 200) * 0.00251256) AS balance_inverted_ratio
+((ratio + 200) * 0.00251256) AS normalized_ratio
 
 
-5. Data description (example):
+After calculation, each normalized value multiplied by ML weight
 
-            balance         attended_percentage     all_marks       average_mark
-
-count       6.280000e+02    628.000000              628.000000      619.000000
-mean        -3.811917e+05   0.942190                54.181529       4.591454
-std         2.246799e+06    0.075745                33.334975       0.367276
-min         -6.500000e+06   0.125000                0.000000        2.880000
-25%         -1.626250e+06   0.914384                28.000000       4.400000
-50%         0.000000e+00    0.965825                52.000000       4.670000
-75%         0.000000e+00    0.989672                77.000000       4.890000
-max         1.979500e+07    1.000000                163.000000      5.000000
 
 */ 
 
