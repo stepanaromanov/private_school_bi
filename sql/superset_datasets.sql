@@ -1396,10 +1396,6 @@ min         -6.500000e+06   0.125000                0.000000        2.880000
 75%         0.000000e+00    0.989672                77.000000       4.890000
 max         1.979500e+07    1.000000                163.000000      5.000000
 
-NOTE: 
-
-
-
 */ 
 
 -- ==========================================================================================================================================
@@ -1432,16 +1428,13 @@ students AS (
                 THEN classes.grade + 6
             ELSE DATE_PART('year', AGE(CURRENT_DATE, students.birthday_timestamp))
         END AS age_years,
-        -- Attendance %
         (SUM(CASE WHEN attendances.state = 'attended' THEN 1 ELSE 0 END)::float /
          NULLIF(
             SUM(CASE WHEN attendances.state IN ('attended','not attended','reasonable') THEN 1 ELSE 0 END) +
             SUM(CASE WHEN attendances.state NOT IN ('attended','not attended','reasonable') THEN 1 ELSE 0 END),
          0)
         )::NUMERIC(10,2) AS attended_percentage,
-        -- Count of non-zero marks
         COUNT(NULLIF(attendances.mark,0)) AS all_marks,
-        -- Average mark (replace NULL with column average)
         COALESCE(
             (SUM(attendances.mark)::float / NULLIF(COUNT(NULLIF(attendances.mark,0)),0))::NUMERIC(10,2),
             AVG(SUM(attendances.mark)::float / NULLIF(COUNT(NULLIF(attendances.mark,0)),0)) OVER ()
@@ -1481,34 +1474,38 @@ students AS (
 SELECT
     sm.*,
     mm.*,
+    
     -- Normalize features to [0,1] and multiply by ML weight
+
     CASE 
-        WHEN mm.max_attendance = mm.min_attendance THEN 0.47::NUMERIC(10,2)
-        ELSE (((sm.attended_percentage - mm.min_attendance) / NULLIF(mm.max_attendance - mm.min_attendance,0)) * 0.47)::NUMERIC(10,2)
+        WHEN mm.max_attendance = mm.min_attendance THEN 0.501::NUMERIC(10,2)
+        ELSE (((sm.attended_percentage - mm.min_attendance) / NULLIF(mm.max_attendance - mm.min_attendance,0)) * 0.501)::NUMERIC(10,2)
     END AS attendance_score,
     
     CASE 
-        WHEN mm.max_all_marks = mm.min_all_marks THEN 0.27::NUMERIC(10,2)
-        ELSE (((sm.all_marks::float - mm.min_all_marks::float) / NULLIF(mm.max_all_marks::float - mm.min_all_marks::float,0)) * 0.27)::NUMERIC(10,2)
+        WHEN mm.max_all_marks = mm.min_all_marks THEN 0.252::NUMERIC(10,2)
+        ELSE (((sm.all_marks::float - mm.min_all_marks::float) / NULLIF(mm.max_all_marks::float - mm.min_all_marks::float,0)) * 0.252)::NUMERIC(10,2)
     END AS all_marks_score,
     
     CASE 
-        WHEN mm.max_average_mark = mm.min_average_mark THEN 0.14::NUMERIC(10,2)
-        ELSE (((sm.average_mark - mm.min_average_mark) / NULLIF(mm.max_average_mark - mm.min_average_mark,0)) * 0.14)::NUMERIC(10,2)
+        WHEN mm.max_average_mark = mm.min_average_mark THEN 0.139::NUMERIC(10,2)
+        ELSE (((sm.average_mark - mm.min_average_mark) / NULLIF(mm.max_average_mark - mm.min_average_mark,0)) * 0.139)::NUMERIC(10,2)
     END AS average_mark_score,
     
     CASE 
-        WHEN mm.max_balance = mm.min_balance THEN 0.12::NUMERIC(10,2)
-        ELSE (((sm.balance - mm.min_balance) / NULLIF(mm.max_balance - mm.min_balance,0)) * 0.12)::NUMERIC(10,2)
+        WHEN mm.max_balance = mm.min_balance THEN 0.108::NUMERIC(10,2)
+        ELSE (((sm.balance - mm.min_balance) / NULLIF(mm.max_balance - mm.min_balance,0)) * 0.108)::NUMERIC(10,2)
     END AS balance_score,
-    
+
     -- Final health score = sum of weighted normalized features
+    
     (
-        CASE WHEN mm.max_attendance = mm.min_attendance THEN 0.47 ELSE ((sm.attended_percentage - mm.min_attendance) / NULLIF(mm.max_attendance - mm.min_attendance,0)) * 0.47 END +
-        CASE WHEN mm.max_all_marks = mm.min_all_marks THEN 0.27 ELSE ((sm.all_marks - mm.min_all_marks) / NULLIF(mm.max_all_marks - mm.min_all_marks,0)) * 0.27 END +
-        CASE WHEN mm.max_average_mark = mm.min_average_mark THEN 0.14 ELSE ((sm.average_mark - mm.min_average_mark) / NULLIF(mm.max_average_mark - mm.min_average_mark,0)) * 0.14 END +
-        CASE WHEN mm.max_balance = mm.min_balance THEN 0.12 ELSE ((sm.balance - mm.min_balance) / NULLIF(mm.max_balance - mm.min_balance,0)) * 0.12 END
+        CASE WHEN mm.max_attendance = mm.min_attendance THEN 0.501 ELSE ((sm.attended_percentage - mm.min_attendance) / NULLIF(mm.max_attendance - mm.min_attendance,0)) * 0.501 END +
+        CASE WHEN mm.max_all_marks = mm.min_all_marks THEN 0.252 ELSE ((sm.all_marks - mm.min_all_marks) / NULLIF(mm.max_all_marks - mm.min_all_marks,0)) * 0.252 END +
+        CASE WHEN mm.max_average_mark = mm.min_average_mark THEN 0.139 ELSE ((sm.average_mark - mm.min_average_mark) / NULLIF(mm.max_average_mark - mm.min_average_mark,0)) * 0.139 END +
+        CASE WHEN mm.max_balance = mm.min_balance THEN 0.108 ELSE ((sm.balance - mm.min_balance) / NULLIF(mm.max_balance - mm.min_balance,0)) * 0.108 END
     )::NUMERIC(10,2) AS health_score
+
 FROM student_metrics sm
 CROSS JOIN minmax mm
 ORDER BY filial, health_score ASC;
