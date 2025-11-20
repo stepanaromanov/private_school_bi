@@ -4,6 +4,7 @@ from src.etl.load import *
 from configs.logging_config import get_logger
 logger = get_logger("etl_log")
 
+logger.info(f"{'>' * 10} MARKETING DEPARTMENT ETL has started.")
 
 try:
     access_token, ad_account_ids = marketing_facebook_token()
@@ -17,3 +18,5 @@ if access_token and ad_account_ids:
         load_to_postgres(df=facebook_df, dept="marketing", table_base_name="facebook", postfix="25", primary_key="campaign_id")
     except Exception as e:
         logger.exception(f"❌Failed to fetch/load marketing facebook data: {e}")
+
+logger.info("MARKETING DEPARTMENT ETL run completed.")

@@ -4,6 +4,7 @@ from src.etl.load import *
 from configs.logging_config import get_logger
 logger = get_logger("etl_log")
 
+logger.info(f"{'>' * 10} TRELLO ETL has started.")
 
 try:
     key, token = trello_token()
@@ -27,3 +28,5 @@ if key and token:
 
     except Exception as e:
         logger.exception(f"❌Failed to fetch/load trello: {e}")
+
+logger.info("TRELLO ETL run completed.")

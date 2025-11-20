@@ -21,7 +21,7 @@ def load_to_postgres(
     Load a pandas DataFrame to PostgreSQL with upsert functionality (psycopg 3.x).
     """
     df_name = getattr(df, "name", "unidentified")
-    logger.info(f"{'=' * 30}\n\nLoading to postgres for DataFrame: {df_name}\n\n{'=' * 30}")
+    logger.info(f"{'=' * 5} Loading to postgres for: {df_name}\n")
 
     # Load credentials
     with open(creds_file, 'r') as f:
@@ -110,6 +110,7 @@ def load_to_postgres(
                 # Parallel insertion using ThreadPoolExecutor
                 total_inserts = 0
                 total_updates = 0
+                total_rows = len(df)
                 futures = []
                 with ThreadPoolExecutor(max_workers=4) as executor:
                     for i in range(0, len(df), batch_size):
@@ -121,14 +122,14 @@ def load_to_postgres(
                         inserts, updates = future.result()
                         total_inserts += inserts
                         total_updates += updates
-                logger.info(f"Total inserts made: {total_inserts}, total updates made: {total_updates}")
+                logger.info(f"inserts made: {total_inserts}, updates made: {total_updates}, total rows: {total_rows}")
             except Exception as e:
                 logger.error(f"[{table_name}] Error during load: {e}")
                 conn.rollback()
                 raise
             finally:
                 logger.info(f"[{table_name}] PostgreSQL connection closed.")
-    logger.info(f"Loading to postgres for DataFrame: {df_name} finished.")
+    logger.info(f"Loading to postgres for: {df_name} finished.")
 
 
 def load_history_to_postgres(
@@ -145,7 +146,7 @@ def load_history_to_postgres(
     Load a pandas DataFrame to PostgreSQL by appending new historical values with auto-generated primary key.
     """
     df_name = getattr(df, "name", "unidentified")
-    logger.info(f"{'=' * 30}\n\nLoading to postgres for DataFrame: {df_name}\n\n{'=' * 30}")
+    logger.info(f"{'=' * 5} Loading to postgres for: {df_name}\n")
 
     # Load credentials
     with open(creds_file, 'r') as f:
@@ -197,7 +198,7 @@ def load_history_to_postgres(
                 create_table_sql += ',\n'.join(columns_def) + '\n);'
                 cur.execute(create_table_sql)
                 conn.commit()
-                logger.info(f"[{table_name}] HISTORY 🗂 Table created or verified with auto-generated hist_id PK.")
+                logger.info(f"[{table_name}] HISTORY 🗂 Table created or verified.")
 
                 # Truncate table if requested (note: does not reset serial by default)
                 if truncate:
@@ -229,6 +230,7 @@ def load_history_to_postgres(
 
                 # Parallel insertion using ThreadPoolExecutor
                 total_inserts = 0
+                total_rows = len(df)
                 futures = []
                 with ThreadPoolExecutor(max_workers=4) as executor:
                     for i in range(0, len(df), batch_size):
@@ -239,11 +241,11 @@ def load_history_to_postgres(
                     for future in as_completed(futures):
                         inserts = future.result()
                         total_inserts += inserts
-                logger.info(f"Total inserts made: {total_inserts}")
+                logger.info(f"Total inserts made: {total_inserts}, total rows: {total_rows}")
             except Exception as e:
                 logger.error(f"[{table_name}] Error during load: {e}")
                 conn.rollback()
                 raise
             finally:
                 logger.info(f"[{table_name}] PostgreSQL connection closed.")
-    logger.info(f"Loading to postgres for DataFrame: {df_name} HISTORY 🗂 finished.")
+    logger.info(f"Loading to postgres for: {df_name} HISTORY 🗂 finished.")

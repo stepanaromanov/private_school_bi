@@ -5,7 +5,7 @@ import datetime
 from configs.logging_config import get_logger
 logger = get_logger("etl_log")
 
-logger.info("FINANCE DEPARTMENT ETL has started.")
+logger.info(f"{'>' * 10} FINANCE DEPARTMENT ETL has started.")
 
 try:
     token = eduschool_token()

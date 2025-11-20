@@ -5,7 +5,7 @@ import datetime
 from configs.logging_config import get_logger
 logger = get_logger("etl_log")
 
-logger.info("SALES DEPARTMENT ETL has started.")
+logger.info(f"{'>' * 10} SALES DEPARTMENT ETL has started.")
 
 with open("credentials/amocrm.json", "r") as f:
     creds = json.load(f)
