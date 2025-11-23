@@ -40,7 +40,7 @@ def add_timestamp(df: pd.DataFrame, col: str = "fetched_timestamp") -> pd.DataFr
 
     # 2. Known date columns to normalize
     date_cols = [
-        'date', 'created_at', 'starts_at', 'ends_at',
+        'date', 'created_at', 'starts_at', 'ends_at', 'archived_at',
         'updated_at', 'birthday', 'contract_date',
         'lesson_date', 'attendance_date', 'contract_end_date',
         'closed_at', 'closest_task_at', 'complete_till', 'actual_date',

@@ -251,51 +251,51 @@ def eduschool_fetch_classes(token, year="6841869b8eb7901bc71c7807", branch="6841
     classes_data = fetch_all_classes()
 
     # Create initial DataFrame
-    df = pd.DataFrame(classes_data)
+    classes_df = pd.DataFrame(classes_data)
 
     # Delete moderators entirely (drop column if exists, no flattening)
-    if 'moderators' in df.columns:
-        df.drop('moderators', axis=1, inplace=True)
+    if 'moderators' in classes_df.columns:
+        classes_df.drop('moderators', axis=1, inplace=True)
 
     # Flatten building (dict with potential nested list like turnstiles)
-    if 'building' in df.columns:
-        building_df = pd.json_normalize(df['building'], sep='_')
-        df = pd.concat([df.drop('building', axis=1), building_df.add_prefix('building_')], axis=1)
+    if 'building' in classes_df.columns:
+        building_df = pd.json_normalize(classes_df['building'], sep='_')
+        classes_df = pd.concat([classes_df.drop('building', axis=1), building_df.add_prefix('building_')], axis=1)
 
-    if 'headTeacher' in df.columns:
+    if 'headTeacher' in classes_df.columns:
         # Extract first headTeacher dict safely
-        df['headTeacher'] = df['headTeacher'].apply(
+        classes_df['headTeacher'] = classes_df['headTeacher'].apply(
             lambda x: x[0] if isinstance(x, list) and len(x) > 0 else None
         )
 
         # Flatten into separate columns
-        headTeacher_df = pd.json_normalize(df['headTeacher'], sep='_')
+        headTeacher_df = pd.json_normalize(classes_df['headTeacher'], sep='_')
 
         # Merge back
-        df = pd.concat(
-            [df.drop('headTeacher', axis=1), headTeacher_df.add_prefix('headTeacher_')],
+        classes_df = pd.concat(
+            [classes_df.drop('headTeacher', axis=1), headTeacher_df.add_prefix('headTeacher_')],
             axis=1
         )
     with open("eduschool_cache/branches.json", "r") as f:
         filials  = json.load(f)
 
-    df['filial'] = filials[branch]
+    classes_df['filial'] = filials[branch]
 
-    df = clean_string_columns(df)
-    df = normalize_columns(df)
-    df = add_timestamp(df)
+    classes_df = clean_string_columns(classes_df)
+    classes_df = normalize_columns(classes_df)
+    classes_df = add_timestamp(classes_df)
 
-    df[['uuid', 'grade']] = df[['uuid', 'grade']].apply(lambda s: fill_and_numeric(s, dtype="int"))
-    df[['students_count', 'max_students_count']] = df[['students_count', 'max_students_count']].apply(
+    classes_df[['uuid', 'grade']] = classes_df[['uuid', 'grade']].apply(lambda s: fill_and_numeric(s, dtype="int"))
+    classes_df[['students_count', 'max_students_count']] = classes_df[['students_count', 'max_students_count']].apply(
         lambda s: fill_and_numeric(s, dtype="int"))
-    df = df.rename(columns={"letter": "section", "language": "instruction_language"})
+    classes_df = classes_df.rename(columns={"letter": "section", "language": "instruction_language"})
 
     logger.info("Eduschool. Classes have been fetched.")
 
-    df.attrs["name"] = "education_classes"
-    save_df_with_timestamp(df=df)
+    classes_df.attrs["name"] = "education_classes"
+    save_df_with_timestamp(df=classes_df)
 
-    return df
+    return classes_df
 
 
 def eduschool_fetch_employees(token, year="6841869b8eb7901bc71c7807", branch="68417f7edbbdfc73ada6ef01"):
@@ -484,6 +484,8 @@ def eduschool_fetch_quarters(token, year="6841869b8eb7901bc71c7807", branch="684
         filials  = json.load(f)
 
     df['filial'] = filials[branch]
+
+    df = df.drop(columns=['months'], errors='ignore')
 
     df.attrs["name"] = "education_quarters"
     # Save dfs to CSV
