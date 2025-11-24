@@ -708,6 +708,9 @@ def eduschool_fetch_students(token, year="6841869b8eb7901bc71c7807", branch="684
     df = clean_string_columns(df)
     df = normalize_columns(df)
 
+    if 'payment_day' not in df.columns:
+        df['payment_day'] = 0.0
+
     # Merge with main pandas dataframe
     df = pd.merge(df, locations_df, on='id', how='left')
 
