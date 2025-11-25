@@ -125,6 +125,7 @@ def fetch_marketing_facebook_data(access_token, ad_account_ids, api_version="v24
     for ad_account_id in ad_account_ids:
         df = collect_insights_to_df(ad_account_id)
         facebook_data = pd.concat([facebook_data, df], ignore_index=True)
+
     """
     for col in ["date_start", "date_stop"]:
         # Convert to datetime, coerce errors to NaT
@@ -142,6 +143,7 @@ def fetch_marketing_facebook_data(access_token, ad_account_ids, api_version="v24
             # Convert non-datetime column to UTC timestamp Series
             facebook_data[col] = pd.to_datetime(facebook_data[col], errors="coerce").dt.tz_localize("UTC")
     """
+
     for col in ["date_start", "date_stop"]:
         # Convert to datetime, coerce errors to NaT
         facebook_data[col] = pd.to_datetime(facebook_data[col], errors="coerce")
