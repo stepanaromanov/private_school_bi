@@ -1381,24 +1381,21 @@ Formula derivation:
 2. Plug values (example):
 
 Goal:
-- Larger (less negative) values (e.g. -1) → closer to 0.5
-- Smaller (more negative) values (e.g. -200) → closer to 0
 
-   min_x = -200
-   max_x = -1
+   student all mark (x) = 102
+
+   min_x = 0
+   max_x = 163
    min_y = 0
-   max_y = 0.5
+   max_y = 0.252
 
 3. Simplify:
-   y = (x + 200) * 0.5 / 199
+   y = (102 - 0) * 0.252 / (163 - 0) + 0
 
-4. Final formula:
-   y = (x + 200) * 0.00251256
+4. Final result :
+   y =  0.1577
 
-((ratio + 200) * 0.00251256) AS normalized_ratio
-
-
-After calculation, each normalized value multiplied by ML weight
+ AS normalized_all_marks_score
 
 
 */ 
