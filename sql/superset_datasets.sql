@@ -1497,16 +1497,7 @@ SELECT
     CASE 
         WHEN mm.max_balance = mm.min_balance THEN 0.108::NUMERIC(10,2)
         ELSE (((sm.balance - mm.min_balance) / NULLIF(mm.max_balance - mm.min_balance,0)) * 0.108)::NUMERIC(10,2)
-    END AS balance_score,
-
-    -- Final health score = sum of weighted normalized features
-    
-    (
-        CASE WHEN mm.max_attendance = mm.min_attendance THEN 0.501 ELSE ((sm.attended_percentage - mm.min_attendance) / NULLIF(mm.max_attendance - mm.min_attendance,0)) * 0.501 END +
-        CASE WHEN mm.max_all_marks = mm.min_all_marks THEN 0.252 ELSE ((sm.all_marks - mm.min_all_marks) / NULLIF(mm.max_all_marks - mm.min_all_marks,0)) * 0.252 END +
-        CASE WHEN mm.max_average_mark = mm.min_average_mark THEN 0.139 ELSE ((sm.average_mark - mm.min_average_mark) / NULLIF(mm.max_average_mark - mm.min_average_mark,0)) * 0.139 END +
-        CASE WHEN mm.max_balance = mm.min_balance THEN 0.108 ELSE ((sm.balance - mm.min_balance) / NULLIF(mm.max_balance - mm.min_balance,0)) * 0.108 END
-    )::NUMERIC(10,2) AS health_score
+    END AS balance_score
 
 FROM student_metrics sm
 CROSS JOIN minmax mm
