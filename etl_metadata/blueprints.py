@@ -88,7 +88,6 @@ expected_columns_dict = {
         "branch_employee__salary",
         "branch_employee__role_name",
         "fetched_timestamp",
-        "archived_at_timestamp",
         "created_at_timestamp",
         "updated_at_timestamp",
         "filial",

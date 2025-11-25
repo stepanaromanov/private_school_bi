@@ -125,7 +125,7 @@ def fetch_marketing_facebook_data(access_token, ad_account_ids, api_version="v24
     for ad_account_id in ad_account_ids:
         df = collect_insights_to_df(ad_account_id)
         facebook_data = pd.concat([facebook_data, df], ignore_index=True)
-
+    """
     for col in ["date_start", "date_stop"]:
         # Convert to datetime, coerce errors to NaT
         facebook_data[col] = pd.to_datetime(facebook_data[col], errors="coerce")
@@ -141,6 +141,22 @@ def fetch_marketing_facebook_data(access_token, ad_account_ids, api_version="v24
         else:
             # Convert non-datetime column to UTC timestamp Series
             facebook_data[col] = pd.to_datetime(facebook_data[col], errors="coerce").dt.tz_localize("UTC")
+    """
+    for col in ["date_start", "date_stop"]:
+        # Convert to datetime, coerce errors to NaT
+        facebook_data[col] = pd.to_datetime(facebook_data[col], errors="coerce")
+
+        # Standardize timezone to UTC if column is datetime-like
+        if pd.api.types.is_datetime64_any_dtype(facebook_data[col]):
+            if facebook_data[col].dt.tz is None:
+                # Localize to UTC if tz-naive
+                facebook_data[col] = facebook_data[col].dt.tz_localize("UTC")
+            else:
+                # Convert to UTC if already tz-aware
+                facebook_data[col] = facebook_data[col].dt.tz_convert("UTC")
+
+        # Fill missing values with a default UTC timestamp
+        facebook_data[col] = facebook_data[col].fillna(pd.Timestamp("1970-01-01T00:00:00Z"))
 
     facebook_data.rename(columns={'campaign_id': 'id'}, inplace=True)
 
