@@ -75,20 +75,7 @@ def amocrm_get_contacts(headers):
     logger.info("SALES: Downloading contacts...")
     contacts = amocrm_get_all_items("contacts", headers)
     contacts_df = pd.DataFrame(contacts)
-    """
-    # function to extract up to 5 tags
-    def extract_tags(embedded):
-        tags = embedded.get("tags")
-        # always return exactly 5 values (fill with None if fewer)
-        if not tags:
-            return ["UNKNOWN"] * 5
-        tag_names = [t.get("name") for t in tags[:5]]
-        return tag_names + ["UNKNOWN"] * (5 - len(tag_names))
 
-    # apply function and expand into separate columns
-    tag_cols = contacts_df["_embedded"].apply(extract_tags).apply(pd.Series)
-    tag_cols.columns = [f"tag_{i + 1}" for i in range(5)]
-    """
     # combine with original df
     contacts_df = pd.concat([contacts_df.drop(columns=["_embedded"]), tag_cols], axis=1)
 
