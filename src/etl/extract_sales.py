@@ -76,9 +76,6 @@ def amocrm_get_contacts(headers):
     contacts = amocrm_get_all_items("contacts", headers)
     contacts_df = pd.DataFrame(contacts)
 
-    # combine with original df
-    contacts_df = pd.concat([contacts_df.drop(columns=["_embedded"]), tag_cols], axis=1)
-
     contacts_df.fillna(0, inplace=True)
     contacts_df = clean_string_columns(contacts_df)
     contacts_df = normalize_columns(contacts_df)
