@@ -1503,7 +1503,88 @@ CROSS JOIN minmax mm
 ORDER BY filial, health_score ASC;
 
 
+-- ==========================================================================================================================================
+-- Department: FINANCE
+-- Dataset: finance_classes_paid_current_month
+-- Description: Detailed information on total amount paid in current month for each class
+-- ==========================================================================================================================================
+
+
+WITH subscriptions AS (
+  SELECT
+      students.filial,
+      CONCAT(classes.grade, ' ', classes.section) AS class_full_name,
+      CASE WHEN students.balance < 0 THEN students.balance ELSE 0 END AS debt,
+      students.subscription__price / NULLIF(students.subscription__duration, 0) AS subscription_monthly_price
+  FROM education_students__2526 AS students
+  JOIN education_classes__2526 AS classes ON students.class___id = classes.id
+), paid AS (
+  SELECT
+      s.filial,
+      CONCAT(classes.grade, ' ', classes.section) AS class_full_name,
+      SUM(t.amount) AS paid_amount
+  FROM finance_transactions__2526 t
+  JOIN education_students__2526 s ON t.student__id = s.id
+  JOIN education_classes__2526 AS classes ON s.class___id = classes.id
+  WHERE transaction_type = 'payIn'
+  AND state NOT IN ('rejected', 'cancelled', 'waiting')
+  AND transaction_type_name = 'OQUVCHI TOLADI'
+  AND EXTRACT(MONTH FROM actual_date_timestamp) = EXTRACT(MONTH FROM CURRENT_DATE)
+  AND EXTRACT(YEAR  FROM actual_date_timestamp) = EXTRACT(YEAR  FROM CURRENT_DATE)
+  GROUP BY s.filial, CONCAT(classes.grade, ' ', classes.section)
+)
+SELECT
+    subscriptions.filial,
+    subscriptions.class_full_name,
+    paid.paid_amount,
+    SUM(subscriptions.debt) AS debt,
+    SUM(subscriptions.subscription_monthly_price) AS due_amount,
+    (paid.paid_amount::float * 100 / SUM(subscriptions.subscription_monthly_price)::float)::numeric(10,2) AS paid_percentage,
+    (SUM(subscriptions.debt)::float * -100 / SUM(subscriptions.subscription_monthly_price)::float)::numeric(10,2) AS debt_percentage
+FROM subscriptions
+JOIN paid
+ON subscriptions.filial = paid.filial
+AND subscriptions.class_full_name = paid.class_full_name
+GROUP BY 1,2,3
+    
+
+-- ==========================================================================================================================================
+-- Department: FINANCE
+-- Dataset: finance_school_costs_percentage_from_total_monthly_income
+-- Description: Detailed information on total amount paid in current month for each class
+-- ==========================================================================================================================================
 
 
 
-
+WITH payin AS (
+  SELECT
+      filial,
+      date_trunc('month', actual_date_timestamp) AS month,
+      SUM(amount)::FLOAT AS total_monthly_income
+  FROM finance_transactions__2526 
+  WHERE transaction_type = 'payIn' 
+  AND state NOT IN ('rejected', 'cancelled', 'waiting')
+  AND actual_date_timestamp > '2025-01-01'
+  GROUP BY 1,2
+), payout AS (
+  SELECT
+      filial,
+      date_trunc('month', actual_date_timestamp) AS month,
+      CASE WHEN transaction_type_name = '0' THEN 'UNKNOWN' ELSE transaction_type_name END AS transaction_type_name,
+      SUM(amount)::FLOAT AS total_cost
+  FROM finance_transactions__2526 
+  WHERE transaction_type = 'payOut' 
+  AND state NOT IN ('rejected', 'cancelled', 'waiting')
+  AND actual_date_timestamp > '2025-01-01'
+  GROUP BY 1,2,3
+)
+SELECT
+  p1.*,
+  p2.transaction_type_name,
+  p2.total_cost,
+  (p2.total_cost * 100 / p1.total_monthly_income)::NUMERIC(10,2) AS cost_percentage
+FROM payin p1
+JOIN payout p2
+ON p1.month = p2.month
+AND p1.filial = p2.filial
+ORDER BY p1.month, p1.filial
