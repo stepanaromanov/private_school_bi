@@ -1366,8 +1366,7 @@ Feature importance:
 - Balance 10.8%
 
 
-NORMALIZATION FORMULA 
-Linear normalization with inversion
+LINEAR NORMALIZATION FORMULA
 
 Input range: [min_x, max_x]
 Output range: [min_y, max_y]
