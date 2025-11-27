@@ -754,15 +754,15 @@ INNER JOIN cashboxes cb_from_cashbox ON ft.from_cashbox_id = cb_from_cashbox.cas
 
 -- finance_payout_transactions dataset
 
-select * from finance_transactions__2526 where transaction_type = 'payOut' AND state NOT IN ('rejected', 'cancelled', 'waiting')
+select * from finance_transactions__2526 where transaction_type = 'payOut' AND state NOT IN ('rejected', 'cancelled', 'waiting') AND transaction_type_name <> '0'
 
 -- finance_payin_transactions dataset
 
-select * from finance_transactions__2526 where transaction_type = 'payIn' AND state NOT IN ('rejected', 'cancelled', 'waiting')
+select * from finance_transactions__2526 where transaction_type = 'payIn' AND state NOT IN ('rejected', 'cancelled', 'waiting') AND transaction_type_name <> '0'
 
 -- finance_transfer_transactions dataset
 
-select * from finance_transactions__2526 where transaction_type = 'transfer' AND state NOT IN ('rejected', 'cancelled', 'waiting')
+select * from finance_transactions__2526 where transaction_type = 'transfer' AND state NOT IN ('rejected', 'cancelled', 'waiting') AND transaction_type_name <> '0'
 
 
 
@@ -1565,17 +1565,19 @@ WITH payin AS (
   WHERE transaction_type = 'payIn' 
   AND state NOT IN ('rejected', 'cancelled', 'waiting')
   AND actual_date_timestamp > '2025-01-01'
+  AND transaction_type_name = 'OQUVCHI TOLADI'
   GROUP BY 1,2
 ), payout AS (
   SELECT
       filial,
       date_trunc('month', actual_date_timestamp) AS month,
-      CASE WHEN transaction_type_name = '0' THEN 'UNKNOWN' ELSE transaction_type_name END AS transaction_type_name,
+      transaction_type_name,
       SUM(amount)::FLOAT AS total_cost
   FROM finance_transactions__2526 
   WHERE transaction_type = 'payOut' 
   AND state NOT IN ('rejected', 'cancelled', 'waiting')
   AND actual_date_timestamp > '2025-01-01'
+  AND transaction_type_name <> '0'
   GROUP BY 1,2,3
 )
 SELECT
