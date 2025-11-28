@@ -351,7 +351,7 @@ def eduschool_fetch_employees(token, year="6841869b8eb7901bc71c7807", branch="68
     if 'customFields' in df.columns:
         df.drop('customFields', axis=1, inplace=True)  # Drop if empty/irrelevant
 
-    df = df.drop(columns=['archived_at'], errors='ignore')
+    df = df.drop(columns=['archived_at_timestamp'], errors='ignore')
 
     # Clean and enrich dfs
     df.fillna(0, inplace=True)
@@ -701,6 +701,9 @@ def eduschool_fetch_students(token, year="6841869b8eb7901bc71c7807", branch="684
         for i in range(max_phones):
             df[f'otherPhoneNumbers__{i}'] = df['otherPhoneNumbers'].str[i]
         df.drop('otherPhoneNumbers', axis=1, inplace=True)
+
+    # delete all parents columns
+    df = df.drop(columns=[col for col in df.columns if "parents" in col.lower()])
 
     # Create summary DataFrame for aggregates
     agg_df = pd.DataFrame([aggregates])
