@@ -765,6 +765,14 @@ select * from finance_transactions__2526 where transaction_type = 'payIn' AND st
 select * from finance_transactions__2526 where transaction_type = 'transfer' AND state NOT IN ('rejected', 'cancelled', 'waiting') AND transaction_type_name <> '0'
 
 
+-- finance_payin_payout_transactions dataset
+
+select * from finance_transactions__2526 where transaction_type = 'payOut' AND state NOT IN ('rejected', 'cancelled', 'waiting') AND transaction_type_name <> '0'
+
+UNION
+
+select * from finance_transactions__2526 where transaction_type = 'payIn' AND state NOT IN ('rejected', 'cancelled', 'waiting') AND transaction_type_name <> '0'
+
 
 -- ==========================================================================================================================================
 -- Department: FINANCE
