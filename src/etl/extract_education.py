@@ -347,11 +347,7 @@ def eduschool_fetch_employees(token, year="6841869b8eb7901bc71c7807", branch="68
             df[f'subjects__{i}'] = df['subjects'].str[i]
         df.drop('subjects', axis=1, inplace=True)
 
-    # Flatten customFields if present (list)
-    if 'customFields' in df.columns:
-        df.drop('customFields', axis=1, inplace=True)  # Drop if empty/irrelevant
-
-    df = df.drop(columns=['archived_at', 'archived_at_timestamp'], errors='ignore')
+    df = df.drop(columns=['customFields', 'archived_at', 'archived_at_timestamp'], errors='ignore')
 
     # Clean and enrich dfs
     df.fillna(0, inplace=True)
