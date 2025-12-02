@@ -126,24 +126,6 @@ def fetch_marketing_facebook_data(access_token, ad_account_ids, api_version="v24
         df = collect_insights_to_df(ad_account_id)
         facebook_data = pd.concat([facebook_data, df], ignore_index=True)
 
-    """
-    for col in ["date_start", "date_stop"]:
-        # Convert to datetime, coerce errors to NaT
-        facebook_data[col] = pd.to_datetime(facebook_data[col], errors="coerce")
-
-        # Fill missing values with a default timestamp
-        facebook_data[col] = facebook_data[col].fillna(pd.Timestamp("1970-01-01T00:00:00Z"))
-
-        # Only attempt tz_localize if column is datetime-like
-        if pd.api.types.is_datetime64_any_dtype(facebook_data[col]):
-            # Localize to UTC if tz-naive
-            if facebook_data[col].dt.tz is None:
-                facebook_data[col] = facebook_data[col].dt.tz_localize("UTC")
-        else:
-            # Convert non-datetime column to UTC timestamp Series
-            facebook_data[col] = pd.to_datetime(facebook_data[col], errors="coerce").dt.tz_localize("UTC")
-    """
-
     for col in ["date_start", "date_stop"]:
         # Convert to datetime, coerce errors to NaT
         facebook_data[col] = pd.to_datetime(facebook_data[col], errors="coerce")
