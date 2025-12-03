@@ -23,7 +23,7 @@ def fetch_marketing_facebook_data(access_token, ad_account_ids, api_version="v24
     def get_campaign_insights(campaign_id):
 
         today = datetime.today().date()
-        since = today - timedelta(days=30)
+        since = today - timedelta(days=29)
 
         time_range = json.dumps({
             "since": str(since),

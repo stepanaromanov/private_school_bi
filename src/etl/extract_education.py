@@ -347,13 +347,13 @@ def eduschool_fetch_employees(token, year="6841869b8eb7901bc71c7807", branch="68
             df[f'subjects__{i}'] = df['subjects'].str[i]
         df.drop('subjects', axis=1, inplace=True)
 
-    df = df.drop(columns=['customFields', 'archived_at', 'archived_at_timestamp'], errors='ignore')
+    df = df.drop(columns=['customFields'], errors='ignore')
 
     # Clean and enrich dfs
-    df.fillna(0, inplace=True)
     df = clean_string_columns(df)
     df = normalize_columns(df)
     df = add_timestamp(df)
+    df.fillna(0, inplace=True)
 
     with open("eduschool_cache/branches.json", "r") as f:
         filials  = json.load(f)
@@ -363,7 +363,7 @@ def eduschool_fetch_employees(token, year="6841869b8eb7901bc71c7807", branch="68
     df.attrs["name"] = "education_employees"
 
     # Save df to CSV
-    save_df_with_timestamp(df=df)
+    # save_df_with_timestamp(df=df)
 
     return df
 

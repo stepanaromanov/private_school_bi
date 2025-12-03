@@ -53,7 +53,48 @@ def add_timestamp(df: pd.DataFrame, col: str = "fetched_timestamp") -> pd.DataFr
             new_col = f"{dc}_timestamp"
 
             # Try parsing as datetime
-            dt = pd.to_datetime(df_out[dc], errors='coerce')
+            def parse_datetime_series(s: pd.Series) -> pd.Series:
+                """
+                Robust multi-format datetime parser:
+                1. Tries fast exact formats.
+                2. Falls back to flexible parser.
+                3. Returns UTC-aware datetimes.
+                """
+
+                # List of common formats to try for speed
+                formats = [
+                    "%Y-%m-%dT%H:%M:%S.%fZ",  # 2025-11-29T07:05:49.721Z
+                    "%Y-%m-%dT%H:%M:%S%z",  # 2025-11-29T07:05:49+00:00
+                    "%Y-%m-%dT%H:%M:%S",  # 2025-11-29T07:05:49
+                    "%Y-%m-%d %H:%M:%S",  # 2025-11-29 07:05:49
+                    "%Y-%m-%d",  # 2025-11-29
+                    "%d-%m-%Y %H:%M:%S",  # 29-11-2025 07:05:49
+                    "%d/%m/%Y %H:%M:%S",  # 29/11/2025 07:05:49
+                    "%d/%m/%Y",  # 29/11/2025
+                    "%m/%d/%Y",  # 11/29/2025
+                    "%m-%d-%Y",  # 11-29-2025
+                ]
+
+                # Try each format in order
+                for fmt in formats:
+                    try:
+                        parsed = pd.to_datetime(s, format=fmt, errors="coerce", utc=True)
+                        # If parsing worked on >90% rows → use this format
+                        if parsed.notna().mean() > 0.9:
+                            return parsed
+                    except Exception:
+                        pass
+
+                # Final fallback: auto-detect everything
+                return pd.to_datetime(s, errors="coerce", utc=True)
+
+            try:
+                dt = parse_datetime_series(df_out[dc])
+            except Exception as e:
+                # Log the error (optional)
+                logger.error(f"⚠️ Failed to parse datetime column '{dc}': {e}")
+                # Fallback: fill with epoch for safety
+                dt = pd.Series(pd.Timestamp("1970-01-01T00:00:00Z"), index=df_out.index)
 
             # Fill invalid or missing with 1970-01-01 UTC
             dt = dt.fillna(pd.Timestamp('1970-01-01T00:00:00.000Z'))
