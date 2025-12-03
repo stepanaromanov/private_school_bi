@@ -14,8 +14,10 @@ except Exception as e:
 
 if access_token and ad_account_ids:
     try:
-        facebook_df = fetch_marketing_facebook_data(access_token, ad_account_ids)
+        facebook_df = fetch_marketing_facebook_data(access_token, ad_account_ids, period=1)
+        facebook_monthly_df = fetch_marketing_facebook_data(access_token, ad_account_ids, period='monthly')
         load_to_postgres(df=facebook_df, dept="marketing", table_base_name="facebook", postfix="25", primary_key="id")
+        load_to_postgres(df=facebook_monthly_df, dept="marketing", table_base_name="facebook_monthly", postfix="25", primary_key="id")
     except Exception as e:
         logger.exception(f"❌Failed to fetch/load marketing facebook data: {e}")
 

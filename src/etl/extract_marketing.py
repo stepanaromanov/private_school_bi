@@ -7,7 +7,7 @@ from configs.logging_config import get_logger
 logger = get_logger("etl_log")
 
 
-def fetch_marketing_facebook_data(access_token, ad_account_ids, api_version="v24.0"):
+def fetch_marketing_facebook_data(access_token, ad_account_ids, api_version="v24.0", period=1):
     # Step 1: Get all campaigns
     def get_campaigns(ad_account_id):
         url = f"https://graph.facebook.com/{api_version}/{ad_account_id}/campaigns"
@@ -20,7 +20,7 @@ def fetch_marketing_facebook_data(access_token, ad_account_ids, api_version="v24
         return response.json().get("data", [])
 
     # Step 2: Get insights for a single campaign
-    def get_campaign_insights(campaign_id):
+    def get_campaign_insights(campaign_id, period):
 
         today = datetime.today().date()
         since = today - timedelta(days=90)
@@ -57,25 +57,29 @@ def fetch_marketing_facebook_data(access_token, ad_account_ids, api_version="v24
         # Join as a single comma-separated string
         fields_str = ",".join(fields)
 
-        params = {
-            "access_token": access_token,
-            "level": "campaign",
-            "fields": fields_str,
-            "time_range": time_range,
-            "time_increment": 1
-        }
+        def get_params(period):
+            params = {
+                "access_token": access_token,
+                "level": "campaign",
+                "fields": fields_str,
+                "time_range": time_range,
+                "time_increment": period
+            }
+            return params
+
+        params = get_params(period)
         response = requests.get(url, params=params)
         response.raise_for_status()
         return response.json().get("data", [])
 
     # Step 3: Collect all insights into a DataFrame
-    def collect_insights_to_df(ad_account_id):
+    def collect_insights_to_df(ad_account_id, period):
         campaigns = get_campaigns(ad_account_id)
         all_rows = []
 
         for camp in campaigns:
             camp_id = camp["id"]
-            insights = get_campaign_insights(camp_id)
+            insights = get_campaign_insights(camp_id, period)
 
             if not insights:
                 # No data for campaign, create one row with zeros
@@ -128,7 +132,7 @@ def fetch_marketing_facebook_data(access_token, ad_account_ids, api_version="v24
 
     # Loop through all ad accounts and collect insights
     for ad_account_id in ad_account_ids:
-        df = collect_insights_to_df(ad_account_id)
+        df = collect_insights_to_df(ad_account_id, period)
         facebook_data = pd.concat([facebook_data, df], ignore_index=True)
 
     for col in ["date_start", "date_stop"]:
