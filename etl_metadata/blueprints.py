@@ -227,6 +227,7 @@ expected_columns_dict = {
     "marketing_facebook": {
         "campaign_name",
         "id",
+        "campaign_id",
         "impressions",
         "clicks",
         "spend",

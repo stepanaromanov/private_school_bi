@@ -23,7 +23,7 @@ def fetch_marketing_facebook_data(access_token, ad_account_ids, api_version="v24
     def get_campaign_insights(campaign_id):
 
         today = datetime.today().date()
-        since = today - timedelta(days=29)
+        since = today - timedelta(days=90)
 
         time_range = json.dumps({
             "since": str(since),
@@ -61,7 +61,8 @@ def fetch_marketing_facebook_data(access_token, ad_account_ids, api_version="v24
             "access_token": access_token,
             "level": "campaign",
             "fields": fields_str,
-            "time_range": time_range
+            "time_range": time_range,
+            "time_increment": 1
         }
         response = requests.get(url, params=params)
         response.raise_for_status()
@@ -77,6 +78,7 @@ def fetch_marketing_facebook_data(access_token, ad_account_ids, api_version="v24
             insights = get_campaign_insights(camp_id)
 
             if not insights:
+                # No data for campaign, create one row with zeros
                 all_rows.append({
                     "campaign_id": camp_id,
                     "campaign_name": camp["name"],
@@ -99,11 +101,14 @@ def fetch_marketing_facebook_data(access_token, ad_account_ids, api_version="v24
                     "date_stop": None
                 })
 
-                continue
-
-            # Facebook always returns a list; we use the first row
-            row = insights[0]
-            all_rows.append(row)
+            else:
+                # Append all daily rows
+                for daily_row in insights:
+                    row_data = {**daily_row, **{
+                        "campaign_id": camp_id,
+                        "account_id": ad_account_id
+                    }}
+                    all_rows.append(row_data)
 
         df = pd.DataFrame(all_rows)
 
@@ -142,7 +147,9 @@ def fetch_marketing_facebook_data(access_token, ad_account_ids, api_version="v24
         # Fill missing values with a default UTC timestamp
         facebook_data[col] = facebook_data[col].fillna(pd.Timestamp("1970-01-01T00:00:00Z"))
 
-    facebook_data.rename(columns={'campaign_id': 'id'}, inplace=True)
+    # facebook_data.rename(columns={'campaign_id': 'id'}, inplace=True)
+
+    facebook_data['id'] = facebook_data['date_start'].astype(str).str[:10] + "_" + facebook_data['campaign_id'].astype(str)
 
     facebook_data.fillna(0, inplace=True)
     facebook_data = clean_string_columns(facebook_data)
