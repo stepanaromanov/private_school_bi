@@ -302,7 +302,7 @@ def eduschool_fetch_employees(token, year="6841869b8eb7901bc71c7807", branch="68
     # API endpoint and base params
     base_url = 'https://backend.eduschool.uz/moderator-api/employees/pagin'
     params = {
-        'limit': 500,  # As per the example; can adjust if needed
+        'limit': 200,  # As per the example; can adjust if needed
     }
     headers = eduschool_headers(token, branch=branch, year=year)
 
