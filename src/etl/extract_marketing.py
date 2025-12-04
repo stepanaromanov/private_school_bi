@@ -2,7 +2,7 @@ from src.utils.utils_dataframe import *
 from src.etl.connect import *
 import requests
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from configs.logging_config import get_logger
 logger = get_logger("etl_log")
 
@@ -163,3 +163,120 @@ def fetch_marketing_facebook_data(access_token, ad_account_ids, api_version="v24
     save_df_with_timestamp(df=facebook_data)
 
     return facebook_data
+
+
+def fetch_marketing_facebook_pages_data(access_token, ad_account_ids, api_version="v24.0"):
+    def get_pages(ad_account_id):
+        """Fetch all promote_pages associated with the ad account"""
+        url = f"https://graph.facebook.com/{api_version}/{ad_account_id}/promote_pages"
+        params = {
+            "access_token": access_token,
+            "fields": "id,name,access_token"  # You can request these fields on the Page nodes
+        }
+        resp = requests.get(url, params=params)
+        resp.raise_for_status()
+        return resp.json().get("data", [])
+
+    def get_page_snapshot(page_id):
+        """Get current fan_count and followers_count"""
+        url = f"https://graph.facebook.com/{api_version}/{page_id}"
+        params = {
+            "access_token": access_token,
+            "fields": "fan_count,followers_count"
+        }
+        resp = requests.get(url, params=params)
+        resp.raise_for_status()
+        return resp.json()
+
+    # Collect all pages
+    all_rows = []
+
+    for account_id in ad_account_ids:
+        pages = get_pages(account_id)
+
+        for page in pages:
+            page_id = page['id']
+            page_name = page['name']
+            page_token = page.get('access_token')  # This is the long-lived Page token
+
+            if not page_token:
+                print(f"No page access token for {page_name} ({page_id})")
+                continue
+
+            snapshot = get_page_snapshot(page_id)  # can still use user token here
+            # daily_metrics = get_page_daily_insights(page_id, page_token)  # ← use page token
+
+            row = {
+                "date": datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=5))).date(),
+                "ad_account_id": account_id,
+                "page_id": page_id,
+                "page_name": page['name'],
+                "fan_count": snapshot.get("fan_count", 0),
+                "followers_count": snapshot.get("followers_count", 0),
+                # "fan_adds": daily_metrics.get("page_fan_adds", 0),
+                # "fan_removes": daily_metrics.get("page_fan_removes", 0)
+            }
+            all_rows.append(row)
+
+    # Convert to DataFrame
+    df = pd.DataFrame(all_rows)
+    df_grouped = (
+        df.groupby(['date', 'page_id'], as_index=False)
+        .agg({
+            'page_name': 'first',
+            'ad_account_id': lambda x: ",".join(sorted(set(x))),  # combine duplicates
+            'fan_count': 'max',
+            'followers_count': 'max',
+        })
+    )
+
+    """
+    def get_page_daily_insights(page_id, page_access_token):
+    url = f"https://graph.facebook.com/{api_version}/{page_id}/insights"
+    
+    # Tashkent time (UTC+5)
+    tashkent = timezone(timedelta(hours=5))
+    
+    # "Since" at start of day, 3 days ago
+    since_ts = (
+        datetime.now(timezone.utc)
+        .astimezone(tashkent)
+        .replace(hour=0, minute=0, second=0, microsecond=0)
+        - timedelta(days=3)
+    ).timestamp()
+    
+    params = {
+        "access_token": page_access_token,
+        "period": "day",
+        "metric": (
+            "page_video_views,page_video_views_paid,page_video_views_organic,"
+            "page_video_view_time,page_views_total,page_actions_post_reactions_total,"
+            "page_negative_feedback,page_places_checkins_total,page_consumptions,"
+            "page_fans_added,page_impressions,page_impressions_organic,page_impressions_paid,"
+            "page_engaged_users,page_post_engagements,page_follows"
+        ),
+        "since": int(since_ts),
+    }
+
+    resp = requests.get(url, params=params)
+    if not resp.ok:
+        print(f"Insights failed for {page_id}:", resp.json())
+        return {"page_fan_adds": 0}
+
+    result = {}
+    for m in resp.json().get("data", []):
+        name = m["name"]
+        result[name] = m["values"][-1]["value"] if m.get("values") else 0
+    return result
+    """
+
+    df_grouped['id'] = df_grouped['date'].astype(str).str[:10] + df_grouped['page_id'].astype(str)
+
+    df_grouped.fillna(0, inplace=True)
+    df_grouped = clean_string_columns(df_grouped)
+    df_grouped = normalize_columns(df_grouped)
+    df_grouped.attrs["name"] = "marketing_facebook_pages"
+    df_grouped = add_timestamp(df_grouped)
+    save_df_with_timestamp(df=df_grouped)
+
+    return df_grouped
