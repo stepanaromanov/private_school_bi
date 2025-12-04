@@ -248,6 +248,16 @@ expected_columns_dict = {
         "date_start_timestamp",
         "date_stop_timestamp",
     },
+    "marketing_facebook_pages": {
+        'page_id',
+        'page_name',
+        'ad_account_id',
+        'fan_count',
+        'followers_count',
+        'id',
+        'fetched_timestamp',
+        'date_timestamp',
+    },
     "sales_catalogs": {
         "id",
         "name",
