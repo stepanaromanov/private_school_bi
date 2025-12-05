@@ -231,6 +231,8 @@ def fetch_marketing_facebook_pages_data(access_token, ad_account_ids, api_versio
     )
 
     """
+    # Meta business additional permissions needed 
+    
     def get_page_daily_insights(page_id, page_access_token):
     url = f"https://graph.facebook.com/{api_version}/{page_id}/insights"
     
