@@ -207,7 +207,8 @@ def fetch_marketing_facebook_pages_data(access_token, ad_account_ids, api_versio
             # daily_metrics = get_page_daily_insights(page_id, page_token)  # ← use page token
 
             row = {
-                "date": datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=5))).date(),
+                # "date": datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=5))).date(),
+                "date": datetime(2025, 12, 3).date(),
                 "ad_account_id": account_id,
                 "page_id": page_id,
                 "page_name": page['name'],
