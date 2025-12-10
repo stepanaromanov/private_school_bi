@@ -42,6 +42,8 @@ expected_columns_dict = {
         "lesson_date_timestamp",
         "attendance_date_timestamp",
         "filial",
+        "reason",
+        "reason_id"
     },
     "education_classes": {
         "id",
@@ -222,7 +224,8 @@ expected_columns_dict = {
         "fetched_timestamp",
         "created_at_timestamp",
         "updated_at_timestamp",
-        "filial"
+        "filial",
+        "teacher_salary_for_lesson_ids"
     },
     "marketing_facebook": {
         "campaign_name",
