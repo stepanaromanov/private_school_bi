@@ -1598,3 +1598,33 @@ JOIN payout p2
 ON p1.month = p2.month
 AND p1.filial = p2.filial
 ORDER BY p1.month, p1.filial
+
+
+-- ==========================================================================================================================================
+-- Department: FINANCE
+-- Dataset: finance_school_food_codes
+-- Description: Detailed information about lunch costs food codes, implemented since 2025-12-08
+
+-- ==========================================================================================================================================
+
+
+select 
+  *,
+  CASE 
+    WHEN comment = '100' THEN 'meat'
+    WHEN comment = '200' THEN 'vegetables'
+    WHEN comment = '300' THEN 'fruits'
+    WHEN comment = '400' THEN 'grains'
+    WHEN comment = '500' THEN 'dairy products'
+    WHEN comment = '600' THEN 'baked goods'
+    WHEN comment = '700' THEN 'spices, oils'
+    WHEN comment = '800' THEN 'other'
+    WHEN comment = '900' THEN 'cleaning' 
+  ELSE 'WRONG CODE' END AS food_code
+FROM finance_transactions__2526
+WHERE transaction_type = 'payOut'
+AND state NOT IN ('rejected', 'cancelled', 'waiting')
+AND transaction_type_name = 'Abet xarajat'
+AND actual_date_timestamp > '2025-12-08'
+
+
