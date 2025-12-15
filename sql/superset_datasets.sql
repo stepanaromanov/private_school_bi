@@ -1603,7 +1603,7 @@ ORDER BY p1.month, p1.filial
 -- ==========================================================================================================================================
 -- Department: FINANCE
 -- Dataset: finance_school_food_codes
--- Description: Detailed information about lunch costs food codes, implemented since 2025-12-08
+-- Description: Detailed information about lunch costs food codes, implemented since 2025-12-16
 
 -- ==========================================================================================================================================
 
@@ -1625,7 +1625,7 @@ FROM finance_transactions__2526
 WHERE transaction_type = 'payOut'
 AND state NOT IN ('rejected', 'cancelled', 'waiting')
 AND transaction_type_name = 'Abet xarajat'
-AND actual_date_timestamp > '2025-12-08'
+AND actual_date_timestamp > '2025-12-16'
 
 
 -- ==========================================================================================================================================
