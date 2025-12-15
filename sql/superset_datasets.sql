@@ -1628,3 +1628,28 @@ AND transaction_type_name = 'Abet xarajat'
 AND actual_date_timestamp > '2025-12-08'
 
 
+-- ==========================================================================================================================================
+-- Department: FINANCE
+-- Dataset: finance_school_costs_general_categories
+-- Description: Detailed information about grouped general categories
+
+-- ==========================================================================================================================================
+
+select 
+  *,
+  CASE 
+    WHEN transaction_type_name IN ('Dividend Xushnudbek J. (Zeta)', 'Divident Xushnudbek J. (Zeta)', 'Divident', 'Litsenziya uchun', 'Qarzlarni uzish (uskuna va jihoz)', 'Qarzlarni uzish ( uskuna va jihoz )','Yangi uskuna sotib olish') THEN 'Dividentlar va investorlar'
+    WHEN transaction_type_name IN ('Back ofisga pul berish', 'Bonus (maktabga oquvchi olib kelgan shaxslar uchun)', 'Marketing harajat', 'Maktabga oquvchi olib kelgan shaxslar uchun bonus', 'Maktabga ooquvchi olib galgan shaxslar uchun bonus', '(agar xohlasangiz shu yerga ham otkazish mumkin)', 'HR xarajatlari (recruiting)', 'HR xarajatlari (recruting)') THEN 'Back ofis'
+    WHEN transaction_type_name IN ('KITOB UCHUN', 'Oqitish xarajatlari', 'Welcome pack', 'Stependiya uchun') THEN 'Talim va oquv materiallari'
+    WHEN transaction_type_name IN ('Ijara', 'Ofis harajatlari','Offise harajatlari', 'Komunal (svet)', 'Komunal(svet)', 'Internet va telefon', 'Bank usluglari', 'Kanstavar', 'Tamirlash xarajatlari') THEN 'Ofis va operatsion xarajatlar'
+    WHEN transaction_type_name IN ('Tadbiriy harajatlar') THEN 'Tadbirlar'
+    WHEN transaction_type_name IN ('Transport xarajati') THEN 'Logistika'
+    WHEN transaction_type_name IN ('SOLIQLAR') THEN 'Soliq va majburiy tolovlar'
+    WHEN transaction_type_name IN ('Pulni qaytarish', 'Adashib kiritilgan pulni balansdan chiqarish') THEN 'Moliyaviy tuzatishlar'
+    WHEN transaction_type_name IN ('Abet xarajat') THEN 'Abet xarajat'
+    WHEN transaction_type_name IN ('Hodimga oylik', 'Hodimga avans', 'Xodimga bonus', 'Bongi uchun') THEN 'Ish xaqi'
+  ELSE 'OTHER' END AS category
+FROM finance_transactions__2526
+WHERE transaction_type = 'payOut'
+AND state NOT IN ('rejected', 'cancelled', 'waiting')
+
