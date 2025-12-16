@@ -1652,4 +1652,5 @@ select
 FROM finance_transactions__2526
 WHERE transaction_type = 'payOut'
 AND state NOT IN ('rejected', 'cancelled', 'waiting')
+AND transaction_type_name <> '0'
 
