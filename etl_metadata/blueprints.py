@@ -95,6 +95,7 @@ expected_columns_dict = {
         "created_at_timestamp",
         "updated_at_timestamp",
         "filial",
+        "gender",
     },
     "education_journals": {
         "class_id",
